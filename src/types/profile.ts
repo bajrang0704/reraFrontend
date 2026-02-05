@@ -12,6 +12,15 @@ export type OrganizationType =
     | "PROPRIETORSHIP"
     | "LLP";
 
+export type OtherMemberType =
+    | "INDIVIDUAL"
+    | "COMPANY"
+    | "PARTNERSHIP"
+    | "TRUST"
+    | "SOCIETIES"
+    | "PUBLIC_AUTHORITY"
+    | "OTHERS";
+
 // Base Address type
 export interface Address {
     houseNumber?: string;
@@ -70,13 +79,22 @@ export interface OrganizationProfile {
 
 export type Profile = IndividualProfile | OrganizationProfile;
 
-// Past Experience Record
+// Project Type for Past Experience
+export type ProjectType = "COMMERCIAL" | "RESIDENTIAL" | "PLOTTED_DEVELOPMENT" | "MIXED_DEVELOPMENT";
+
+// Past Experience Record (matches API spec)
 export interface PastExperience {
     id: string;
     projectName: string;
-    completionYear: number;
-    location: string;
-    details?: string;
+    projectType: ProjectType;
+    surveyOrPlotNo: string;
+    projectAddress: string;
+    landAreaSqMtrs: number;
+    numberOfBuildingsPlotsBlocks: number;
+    numberOfApartments: number; // Must be > 0 for RESIDENTIAL/MIXED. Must be 0 for PLOTTED.
+    totalCostInInr: number;
+    originalProposedCompletionDate: string; // YYYY-MM-DD
+    actualCompletionDate: string; // Must be >= Proposed Date
 }
 
 // Organization Member (matches API spec)
@@ -100,6 +118,37 @@ export interface OrgMember {
     village?: string;
     pinCode?: string;
     imageUrl?: string;
+}
+
+// Other Organization Member (External Entities for 'OTHERS' org type)
+export interface OtherMember {
+    id?: string;
+    memberType: OtherMemberType;
+    memberTypeOther?: string; // Required ONLY if memberType is 'OTHERS'
+    name: string;
+    panNumber: string; // Must be unique in this org
+
+    // Address
+    houseNumber: string;
+    buildingName: string;
+    streetName: string;
+    locality: string;
+    landmark: string;
+    state: string;
+    district: string;
+    mandal?: string; // Optional
+    city?: string; // Village/City/Town - Optional
+    pinCode: string; // Must be 6 digits
+
+    // Contact Info
+    contactPersonName: string;
+    contactPersonDesignation?: string;
+    mobileNumber: string; // Must be 10 digits
+    officeNumber?: string;
+    faxNumber?: string;
+    email: string;
+
+    isActive?: boolean;
 }
 
 // API Response types

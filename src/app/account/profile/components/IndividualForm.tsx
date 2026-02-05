@@ -148,11 +148,10 @@ export default function IndividualForm({
                             control={form.control}
                             rules={{ required: "Required" }}
                             render={({ field }) => (
-                                render = {({ field }) => (
-                        <RadioGroup row {...field} value={field.value ? "YES" : "NO"} onChange={(e) => field.onChange(e.target.value === "YES")}>
-                            <FormControlLabel value="YES" control={<Radio />} label="Yes" />
-                            <FormControlLabel value="NO" control={<Radio />} label="No" />
-                        </RadioGroup>
+                                <RadioGroup row {...field} value={field.value ? "YES" : "NO"} onChange={(e) => field.onChange(e.target.value === "YES")}>
+                                    <FormControlLabel value="YES" control={<Radio />} label="Yes" />
+                                    <FormControlLabel value="NO" control={<Radio />} label="No" />
+                                </RadioGroup>
                             )}
                         />
                     </Grid>
@@ -165,11 +164,10 @@ export default function IndividualForm({
                             control={form.control}
                             rules={{ required: "Required" }}
                             render={({ field }) => (
-                                render = {({ field }) => (
-                        <RadioGroup row {...field} value={field.value ? "YES" : "NO"} onChange={(e) => field.onChange(e.target.value === "YES")}>
-                            <FormControlLabel value="YES" control={<Radio />} label="Yes" />
-                            <FormControlLabel value="NO" control={<Radio />} label="No" />
-                        </RadioGroup>
+                                <RadioGroup row {...field} value={field.value ? "YES" : "NO"} onChange={(e) => field.onChange(e.target.value === "YES")}>
+                                    <FormControlLabel value="YES" control={<Radio />} label="Yes" />
+                                    <FormControlLabel value="NO" control={<Radio />} label="No" />
+                                </RadioGroup>
                             )}
                         />
                     </Grid>

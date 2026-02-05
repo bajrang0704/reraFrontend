@@ -218,19 +218,54 @@ export default function MemberForm({ onSave, onCancel, initialData, districts, d
                 <Typography variant="subtitle1" sx={{ mb: 2 }}>Partner Address Details</Typography>
                 <Grid container spacing={2}>
                     <Grid size={{ xs: 12, md: 4 }}>
-                        <TextField size="small" fullWidth label="House Number" {...form.register("houseNumber")} />
+                        <TextField
+                            size="small"
+                            fullWidth
+                            label="House Number"
+                            required
+                            {...form.register("houseNumber", { required: "Required" })}
+                            error={!!form.formState.errors.houseNumber}
+                        />
                     </Grid>
                     <Grid size={{ xs: 12, md: 4 }}>
-                        <TextField size="small" fullWidth label="Building Name" {...form.register("buildingName")} />
+                        <TextField
+                            size="small"
+                            fullWidth
+                            label="Building Name"
+                            required
+                            {...form.register("buildingName", { required: "Required" })}
+                            error={!!form.formState.errors.buildingName}
+                        />
                     </Grid>
                     <Grid size={{ xs: 12, md: 4 }}>
-                        <TextField size="small" fullWidth label="Street Name" {...form.register("streetName")} />
+                        <TextField
+                            size="small"
+                            fullWidth
+                            label="Street Name"
+                            required
+                            {...form.register("streetName", { required: "Required" })}
+                            error={!!form.formState.errors.streetName}
+                        />
                     </Grid>
                     <Grid size={{ xs: 12, md: 4 }}>
-                        <TextField size="small" fullWidth label="Locality" {...form.register("locality")} />
+                        <TextField
+                            size="small"
+                            fullWidth
+                            label="Locality"
+                            required
+                            {...form.register("locality", { required: "Required" })}
+                            error={!!form.formState.errors.locality}
+                        />
                     </Grid>
                     <Grid size={{ xs: 12, md: 4 }}>
-                        <TextField size="small" fullWidth label="Landmark" {...form.register("landmark")} />
+                        <TextField
+                            size="small"
+                            fullWidth
+                            label="Landmark"
+                            required
+                            {...form.register("landmark", { required: "Required" })}
+                            error={!!form.formState.errors.landmark}
+                        />
                     </Grid>
                     <Grid size={{ xs: 12, md: 4 }}>
                         <TextField size="small" fullWidth label="State" value="Telangana" disabled {...form.register("state")} />

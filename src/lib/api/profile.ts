@@ -9,6 +9,7 @@ import {
     Mandal,
     Village,
     Designation,
+    OtherMember,
 } from "@/types/profile";
 
 export const profileApi = {
@@ -32,28 +33,33 @@ export const profileApi = {
         return response.data;
     },
 
-    // Past Experience CRUD
-    getPastExperiences: async (projectId: string): Promise<PastExperience[]> => {
-        const encodedId = encodeURIComponent(projectId);
-        const response = await axiosInstance.get<PastExperience[]>(`/projects/${encodedId}/sections/promoter-profile/past-experiences`);
+    // Past Experience CRUD (API: /profiles/:identifier/past-experiences)
+    getPastExperiences: async (identifier: string): Promise<PastExperience[]> => {
+        const encodedId = encodeURIComponent(identifier);
+        try {
+            const response = await axiosInstance.get<PastExperience[]>(`/profiles/${encodedId}/past-experiences`);
+            return response.data;
+        } catch (error: any) {
+            if (error.response?.status === 404) return [];
+            throw error;
+        }
+    },
+
+    addPastExperience: async (identifier: string, data: Omit<PastExperience, "id">): Promise<PastExperience> => {
+        const encodedId = encodeURIComponent(identifier);
+        const response = await axiosInstance.post<PastExperience>(`/profiles/${encodedId}/past-experiences`, data);
         return response.data;
     },
 
-    addPastExperience: async (projectId: string, data: Omit<PastExperience, "id">): Promise<PastExperience> => {
-        const encodedId = encodeURIComponent(projectId);
-        const response = await axiosInstance.post<PastExperience>(`/projects/${encodedId}/sections/promoter-profile/past-experiences`, data);
+    updatePastExperience: async (identifier: string, id: string, data: Partial<PastExperience>): Promise<PastExperience> => {
+        const encodedId = encodeURIComponent(identifier);
+        const response = await axiosInstance.put<PastExperience>(`/profiles/${encodedId}/past-experiences/${id}`, data);
         return response.data;
     },
 
-    updatePastExperience: async (projectId: string, id: string, data: Partial<PastExperience>): Promise<PastExperience> => {
-        const encodedId = encodeURIComponent(projectId);
-        const response = await axiosInstance.put<PastExperience>(`/projects/${encodedId}/sections/promoter-profile/past-experiences/${id}`, data);
-        return response.data;
-    },
-
-    deletePastExperience: async (projectId: string, id: string): Promise<void> => {
-        const encodedId = encodeURIComponent(projectId);
-        await axiosInstance.delete(`/projects/${encodedId}/sections/promoter-profile/past-experiences/${id}`);
+    deletePastExperience: async (identifier: string, id: string): Promise<void> => {
+        const encodedId = encodeURIComponent(identifier);
+        await axiosInstance.delete(`/profiles/${encodedId}/past-experiences/${id}`);
     },
 
     // Organization Member CRUD
@@ -85,6 +91,33 @@ export const profileApi = {
     deleteOrgMember: async (projectId: string, id: string): Promise<void> => {
         const encodedId = encodeURIComponent(projectId);
         await axiosInstance.delete(`/projects/${encodedId}/sections/promoter-profile/org-members/${id}`);
+    },
+
+    // Other Members (for OrganizationType = 'OTHERS')
+    getOtherMembers: async (projectId: string): Promise<OtherMember[]> => {
+        const encodedId = encodeURIComponent(projectId);
+        try {
+            const response = await axiosInstance.get<OtherMember[]>(`/organizations/${encodedId}/other-members`);
+            return response.data;
+        } catch (error: any) {
+            if (error.response?.status === 404) return [];
+            throw error;
+        }
+    },
+
+    addOtherMember: async (projectId: string, data: Omit<OtherMember, "id">): Promise<OtherMember> => {
+        const encodedId = encodeURIComponent(projectId);
+        const response = await axiosInstance.post<OtherMember>(`/organizations/${encodedId}/other-members`, data);
+        return response.data;
+    },
+
+    updateOtherMember: async (memberId: string, data: Partial<OtherMember>): Promise<OtherMember> => {
+        const response = await axiosInstance.put<OtherMember>(`/other-members/${memberId}`, data);
+        return response.data;
+    },
+
+    deleteOtherMember: async (memberId: string): Promise<void> => {
+        await axiosInstance.delete(`/other-members/${memberId}`);
     },
 
     // Location data (for cascading dropdowns)

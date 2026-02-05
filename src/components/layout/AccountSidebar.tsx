@@ -34,20 +34,31 @@ export function AccountSidebar() {
         if (user?.projectId) {
             profileApi.getProfile(user.projectId)
                 .then(res => {
-                    const p = res.profile || (res as any).data;
+                    // Handle different response structures
+                    const p = (res as any).data || res.profile;
                     if (p) {
-                        const infoType = p.infoType || p.informationType;
-                        const orgType = p.orgType || p.organizationType;
-                        if (infoType === "ORGANIZATION" && orgType === "OTHERS") {
+                        // Check for new structure: profileType + entityType
+                        // OR old structure: informationType + organizationType
+                        const profileType = p.profileType || p.informationType || p.infoType;
+                        const entityType = p.entityType || p.organizationType || p.orgType;
+
+                        // Also check nested organizationDetails
+                        const orgDetails = p.organizationDetails;
+                        const nestedEntityType = orgDetails?.entityType || orgDetails?.organizationType;
+
+                        const isOtherThanIndividual = profileType === "OTHER_THAN_INDIVIDUAL" || profileType === "ORGANIZATION";
+                        const isOthersType = entityType === "OTHERS" || nestedEntityType === "OTHERS";
+
+                        if (isOtherThanIndividual && isOthersType) {
                             setShowOrgMembers(true);
                         } else {
                             setShowOrgMembers(false);
                         }
+                    } else {
+                        setShowOrgMembers(false);
                     }
                 })
-                .catch(e => {
-                    // console.error("Sidebar profile fetch error", e);
-                    // Fail silently
+                .catch(() => {
                     setShowOrgMembers(false);
                 });
         }

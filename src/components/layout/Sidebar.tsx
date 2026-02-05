@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
     Box,
     Drawer,
@@ -18,6 +18,7 @@ import {
 } from '@mui/material';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { profileApi } from '@/lib/api/profile';
 import PersonIcon from '@mui/icons-material/Person';
 import BusinessIcon from '@mui/icons-material/Business';
 import PaymentIcon from '@mui/icons-material/Payment';
@@ -76,6 +77,37 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }: SidebarProps) => {
         }));
     };
 
+    // State to track if org-members should be shown
+    const [showOrgMembers, setShowOrgMembers] = useState(false);
+
+    useEffect(() => {
+        if (user?.projectId) {
+            profileApi.getProfile(user.projectId)
+                .then(res => {
+                    console.log("Sidebar profile response:", res);
+                    const p = (res as any).data || res.profile;
+                    console.log("Sidebar profile object:", p);
+                    if (p) {
+                        const profileType = p.profileType || p.informationType || p.infoType;
+                        const entityType = p.entityType || p.organizationType || p.orgType;
+                        const orgDetails = p.organizationDetails;
+                        const nestedEntityType = orgDetails?.entityType || orgDetails?.organizationType;
+
+                        console.log("Sidebar check:", { profileType, entityType, orgDetails, nestedEntityType });
+
+                        const isOtherThanIndividual = profileType === "OTHER_THAN_INDIVIDUAL" || profileType === "ORGANIZATION";
+                        const isOthersType = entityType === "OTHERS" || nestedEntityType === "OTHERS";
+
+                        console.log("Sidebar result:", { isOtherThanIndividual, isOthersType, showOrgMembers: isOtherThanIndividual && isOthersType });
+                        setShowOrgMembers(isOtherThanIndividual && isOthersType);
+                    } else {
+                        setShowOrgMembers(false);
+                    }
+                })
+                .catch(() => setShowOrgMembers(false));
+        }
+    }, [user?.projectId]);
+
     const handleItemClick = (item: MenuItem) => {
         if (item.children) {
             handleSubmenuClick(item.text);
@@ -95,7 +127,7 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }: SidebarProps) => {
     const projectId = user?.projectId || user?.id || '';
     const encodedProjectId = encodeURIComponent(projectId);
 
-    const menuItems: MenuItem[] = [
+    const baseMenuItems: MenuItem[] = [
         {
             text: 'Account',
             icon: <AccountCircleIcon />,
@@ -131,6 +163,24 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }: SidebarProps) => {
         { text: 'Overall completion certificate upload', icon: <VerifiedUserIcon />, path: '/update/completion' },
         { text: 'Log Out', icon: <LogoutIcon />, path: '/logout' },
     ];
+
+    // Filter out org-members if not applicable
+    const menuItems = useMemo(() => {
+        return baseMenuItems.map(item => {
+            if (item.text === 'Account' && item.children) {
+                return {
+                    ...item,
+                    children: item.children.filter(child => {
+                        if (child.path === '/account/org-members') {
+                            return showOrgMembers;
+                        }
+                        return true;
+                    })
+                };
+            }
+            return item;
+        });
+    }, [showOrgMembers, encodedProjectId]);
 
     const isActive = (path?: string) => {
         if (!path) return false;

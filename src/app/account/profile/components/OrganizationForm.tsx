@@ -137,8 +137,14 @@ export default function OrganizationForm({
 
     const showPartnerDetails = organizationType && organizationType !== "OTHERS";
 
+    // Log validation errors for debugging
+    const onInvalid = (errors: any) => {
+        console.error("Form validation errors:", errors);
+        alert("Please fill all required fields. Check console for details.");
+    };
+
     return (
-        <form onSubmit={form.handleSubmit(handleFormSubmit)}>
+        <form onSubmit={form.handleSubmit(handleFormSubmit, onInvalid)}>
             {/* Organization Details */}
             <Paper sx={{ mb: 4, p: 3 }}>
                 <Typography variant="h6" sx={{ mb: 3 }}>Organization Details</Typography>
@@ -211,7 +217,7 @@ export default function OrganizationForm({
                         <Controller
                             name="hasPastExperience"
                             control={form.control}
-                            rules={{ required: "Required" }}
+                            rules={{ validate: (value) => typeof value === 'boolean' || "Required" }}
                             render={({ field }) => (
                                 <RadioGroup row {...field} value={field.value ? "YES" : "NO"} onChange={(e) => field.onChange(e.target.value === "YES")}>
                                     <FormControlLabel value="YES" control={<Radio />} label="Yes" />
@@ -227,7 +233,7 @@ export default function OrganizationForm({
                         <Controller
                             name="hasGst"
                             control={form.control}
-                            rules={{ required: "Required" }}
+                            rules={{ validate: (value) => typeof value === 'boolean' || "Required" }}
                             render={({ field }) => (
                                 <RadioGroup row {...field} value={field.value ? "YES" : "NO"} onChange={(e) => field.onChange(e.target.value === "YES")}>
                                     <FormControlLabel value="YES" control={<Radio />} label="Yes" />

@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { profileApi } from "@/lib/api/profile";
-import { OrgMember, Designation, District, Mandal, Village } from "@/types/profile";
+import { OrgMember, Designation, District, Mandal, Village, OtherMember, OrganizationProfile } from "@/types/profile";
 import { useAuth } from "@/context/AuthContext";
+import OtherMemberForm from "./OtherMemberForm";
 import {
     Box,
     Button,
@@ -29,29 +30,78 @@ import {
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 
 const PAN_REGEX = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
 const AADHAR_REGEX = /^[0-9]{12}$/;
 
 export default function OrgMembersPage() {
     const { user } = useAuth();
-    const [members, setMembers] = useState<OrgMember[]>([]);
     const [loading, setLoading] = useState(true);
     const [isAdding, setIsAdding] = useState(false);
+
+    // Standard Organization Members
+    const [members, setMembers] = useState<OrgMember[]>([]);
+
+    // Other Members
+    const [otherMembers, setOtherMembers] = useState<OtherMember[]>([]);
+    const [isOtherOrg, setIsOtherOrg] = useState(false);
+
     const [editingId, setEditingId] = useState<string | null>(null);
     const [designations, setDesignations] = useState<Designation[]>([]);
     const [districts, setDistricts] = useState<District[]>([]);
     const [mandals, setMandals] = useState<Mandal[]>([]);
     const [villages, setVillages] = useState<Village[]>([]);
 
+    // For passing data to OtherMemberForm
+    const [editingOtherMember, setEditingOtherMember] = useState<OtherMember | null>(null);
+
     const { register, handleSubmit, reset, control, watch, setValue, formState: { errors, isSubmitting } } = useForm<OrgMember>();
 
     useEffect(() => {
         if (user?.projectId) {
-            loadMembers();
+            checkOrgTypeAndLoad();
             loadDistricts();
         }
     }, [user?.projectId]);
+
+    const checkOrgTypeAndLoad = async () => {
+        if (!user?.projectId) return;
+        try {
+            const profileData = await profileApi.getProfile(user.projectId);
+            // Handle different response structures
+            const p = (profileData as any).data || profileData.profile;
+            console.log("OrgMembers page profile data:", p);
+
+            if (p) {
+                // Check for new structure (profileType + entityType) or old structure
+                const profileType = p.profileType || p.informationType || p.infoType;
+                const entityType = p.entityType || p.organizationType || p.orgType;
+                const orgDetails = p.organizationDetails;
+                const nestedEntityType = orgDetails?.entityType || orgDetails?.organizationType;
+
+                const isOtherThanIndividual = profileType === "OTHER_THAN_INDIVIDUAL" || profileType === "ORGANIZATION";
+                const isOthersType = entityType === "OTHERS" || nestedEntityType === "OTHERS";
+
+                console.log("OrgMembers page check:", { profileType, entityType, nestedEntityType, isOtherThanIndividual, isOthersType });
+
+                if (isOtherThanIndividual && isOthersType) {
+                    setIsOtherOrg(true);
+                    loadOtherMembers();
+                } else {
+                    setIsOtherOrg(false);
+                    loadMembers();
+                }
+            } else {
+                setIsOtherOrg(false);
+                loadMembers();
+            }
+        } catch (error) {
+            console.error("Failed to load profile", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const loadMembers = async () => {
         if (!user?.projectId) return;
@@ -60,8 +110,16 @@ export default function OrgMembersPage() {
             setMembers(data);
         } catch (error) {
             console.error("Failed to load org members", error);
-        } finally {
-            setLoading(false);
+        }
+    };
+
+    const loadOtherMembers = async () => {
+        if (!user?.projectId) return;
+        try {
+            const data = await profileApi.getOtherMembers(user.projectId);
+            setOtherMembers(data);
+        } catch (error) {
+            console.error("Failed to load other members", error);
         }
     };
 
@@ -109,11 +167,13 @@ export default function OrgMembersPage() {
     const handleClose = () => {
         setIsAdding(false);
         setEditingId(null);
+        setEditingOtherMember(null);
         reset();
         setMandals([]);
         setVillages([]);
     };
 
+    // Standard Member Submit
     const onSubmit = async (data: OrgMember) => {
         if (!user?.projectId) return;
         try {
@@ -130,35 +190,66 @@ export default function OrgMembersPage() {
         }
     };
 
+    // Other Member Submit
+    const onSaveOther = async (data: OtherMember) => {
+        if (!user?.projectId) return;
+        try {
+            if (editingId) {
+                await profileApi.updateOtherMember(editingId, data);
+            } else {
+                await profileApi.addOtherMember(user.projectId, data);
+            }
+            handleClose(); // Resets editing state
+            loadOtherMembers(); // Refreshes list
+        } catch (error) {
+            console.error("Failed to save other member", error);
+            alert("Failed to save member");
+        }
+    };
+
     const handleDelete = async (id: string) => {
         if (!user?.projectId) return;
         if (!confirm("Are you sure you want to delete this member?")) return;
         try {
-            await profileApi.deleteOrgMember(user.projectId, id);
-            loadMembers();
+            if (isOtherOrg) {
+                await profileApi.deleteOtherMember(id);
+                loadOtherMembers();
+            } else {
+                await profileApi.deleteOrgMember(user.projectId, id);
+                loadMembers();
+            }
         } catch (error) {
             console.error("Failed to delete", error);
         }
     };
 
-    const handleEdit = async (member: OrgMember) => {
+    const handleEdit = async (member: any) => { // Type loose here to handle both
         setEditingId(member.id || null);
-        reset(member);
         setIsAdding(true);
-        // Load mandals and villages for existing member
-        if (member.district) {
-            const mandalsData = await profileApi.getMandals(member.district);
-            setMandals(mandalsData);
-            if (member.mandal) {
-                const villagesData = await profileApi.getVillages(member.mandal);
-                setVillages(villagesData);
+
+        if (isOtherOrg) {
+            setEditingOtherMember(member as OtherMember);
+            // Form is inline, so we just set state and it updates
+        } else {
+            const orgMember = member as OrgMember;
+            reset(orgMember);
+            // Load mandals and villages for existing member
+            if (orgMember.district) {
+                const mandalsData = await profileApi.getMandals(orgMember.district);
+                setMandals(mandalsData);
+                if (orgMember.mandal) {
+                    const villagesData = await profileApi.getVillages(orgMember.mandal);
+                    setVillages(villagesData);
+                }
             }
         }
     };
 
     const handleAdd = () => {
-        // For simplicity, load default designations (LLP as example)
-        loadDesignations("LLP");
+        if (!isOtherOrg) {
+            loadDesignations("LLP");
+        }
+        setEditingOtherMember(null);
         setIsAdding(true);
     };
 
@@ -173,68 +264,182 @@ export default function OrgMembersPage() {
         </Box>
     );
 
+    // Render Logic differs significantly for OTHERS vs Standard
+
     return (
         <Box sx={{ maxWidth: 1200, mx: 'auto', p: 2 }}>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-                <Typography variant="h5" fontWeight="bold">Organization Other Member Details</Typography>
-                <Button
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    onClick={handleAdd}
-                >
-                    Add Member
-                </Button>
+                <Typography variant="h5" fontWeight="bold">
+                    {isOtherOrg ? "Add Organizations Other Member Details" : "Organization Member Details"}
+                </Typography>
+                {!isOtherOrg && (
+                    <Button
+                        variant="contained"
+                        startIcon={<AddIcon />}
+                        onClick={handleAdd}
+                    >
+                        Add Member
+                    </Button>
+                )}
             </Box>
 
-            <TableContainer component={Paper}>
-                <Table>
-                    <TableHead sx={{ bgcolor: 'primary.main' }}>
-                        <TableRow>
-                            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>First Name</TableCell>
-                            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Last Name</TableCell>
-                            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Designation</TableCell>
-                            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>PAN Number</TableCell>
-                            <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Aadhaar Number</TableCell>
-                            <TableCell sx={{ color: 'white', fontWeight: 'bold', width: 100 }}>Actions</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {members.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                                    <Typography color="textSecondary">No members added yet</Typography>
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            members.map((member) => (
-                                <TableRow key={member.id} hover>
-                                    <TableCell>{member.firstName}</TableCell>
-                                    <TableCell>{member.lastName}</TableCell>
-                                    <TableCell>{getDesignationLabel(member.designationCode)}</TableCell>
-                                    <TableCell>{member.panNumber || '-'}</TableCell>
-                                    <TableCell>{member.aadhaarNumber || '-'}</TableCell>
-                                    <TableCell>
-                                        <Box display="flex">
-                                            <Tooltip title="Edit">
-                                                <IconButton size="small" color="primary" onClick={() => handleEdit(member)}>
-                                                    <EditIcon />
-                                                </IconButton>
-                                            </Tooltip>
-                                            <Tooltip title="Delete">
-                                                <IconButton size="small" color="error" onClick={() => handleDelete(member.id!)}>
-                                                    <DeleteIcon />
-                                                </IconButton>
-                                            </Tooltip>
-                                        </Box>
+            {isOtherOrg ? (
+                // OTHERS View: Form (Inline) -> List (Table) -> Document Upload
+                <Box>
+                    <OtherMemberForm
+                        onSave={onSaveOther}
+                        onCancel={handleClose}
+                        initialData={editingOtherMember}
+                        districts={districts}
+                    />
+
+                    {/* List of Members */}
+                    <Typography variant="h6" sx={{ mt: 4, mb: 1, color: 'primary.main', visibility: 'hidden' }}>Members List</Typography>
+                    <TableContainer component={Paper} variant="outlined" sx={{ mt: 2, mb: 4 }}>
+                        <Table>
+                            <TableHead sx={{ bgcolor: '#4fc3f7' }}>
+                                <TableRow>
+                                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Name</TableCell>
+                                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>PAN Number</TableCell>
+                                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Member Type</TableCell>
+                                    <TableCell sx={{ color: 'white', fontWeight: 'bold', width: 120 }}>Action</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {otherMembers.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={4} align="center" sx={{ py: 3 }}>
+                                            <Typography color="textSecondary">No members added yet</Typography>
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    otherMembers.map((member) => (
+                                        <TableRow key={member.id} hover>
+                                            <TableCell>{member.name}</TableCell>
+                                            <TableCell>{member.panNumber}</TableCell>
+                                            <TableCell>{member.memberType === "OTHERS" ? member.memberTypeOther : member.memberType}</TableCell>
+                                            <TableCell>
+                                                <Button
+                                                    size="small"
+                                                    variant="contained"
+                                                    color="primary"
+                                                    sx={{ mr: 1, minWidth: 0, px: 2 }}
+                                                    startIcon={<EditIcon sx={{ fontSize: 16 }} />}
+                                                    onClick={() => handleEdit(member)}
+                                                >
+                                                    Edit
+                                                </Button>
+                                                <Button
+                                                    size="small"
+                                                    variant="contained"
+                                                    color="error"
+                                                    sx={{ minWidth: 0, px: 1, bgcolor: '#d32f2f' }}
+                                                    onClick={() => handleDelete(member.id!)}
+                                                >
+                                                    <DeleteIcon sx={{ fontSize: 18 }} />
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+
+                    {/* Document Upload Section */}
+                    <Typography variant="h6" sx={{ mt: 2, mb: 2, color: 'success.main', fontWeight: 'bold', fontSize: '1.1rem' }}>
+                        Document Upload :
+                    </Typography>
+                    <TableContainer component={Paper} variant="outlined" sx={{ mb: 4, bgcolor: '#e0f7fa' }}>
+                        <Table>
+                            <TableHead sx={{ bgcolor: '#4fc3f7' }}>
+                                <TableRow>
+                                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Uploaded Document</TableCell>
+                                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Upload</TableCell>
+                                    <TableCell sx={{ color: 'white', fontWeight: 'bold', width: 220 }}>Action</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                <TableRow>
+                                    <TableCell sx={{ bgcolor: 'white' }}>1 Upload Agreement / MoU Copy</TableCell>
+                                    <TableCell sx={{ bgcolor: 'white' }}>
+                                        <Button
+                                            component="label"
+                                            size="small"
+                                            variant="contained"
+                                            sx={{ bgcolor: '#e0e0e0', color: 'black', textTransform: 'none', boxShadow: 'none' }}
+                                        >
+                                            Choose File
+                                            <input type="file" hidden />
+                                        </Button>
+                                        <Typography component="span" variant="caption" sx={{ ml: 1 }}>No file chosen</Typography>
+                                    </TableCell>
+                                    <TableCell sx={{ bgcolor: 'white' }}>
+                                        <Button variant="contained" size="small" color="warning" sx={{ mr: 1, bgcolor: '#ff9800' }} startIcon={<CloudUploadIcon />}>Upload</Button>
+                                        <Button variant="contained" size="small" color="success" startIcon={<AddIcon />}>Add</Button>
                                     </TableCell>
                                 </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
-            </TableContainer>
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                </Box>
+            ) : (
+                <TableContainer component={Paper}>
+                    <Table>
+                        <TableHead sx={{ bgcolor: 'primary.main' }}>
+                            <TableRow>
+                                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>First Name</TableCell>
+                                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Last Name</TableCell>
+                                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Designation</TableCell>
+                                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>PAN Number</TableCell>
+                                <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Aadhaar Number</TableCell>
+                                <TableCell sx={{ color: 'white', fontWeight: 'bold', width: 100 }}>Actions</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {members.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                                        <Typography color="textSecondary">No members added yet</Typography>
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                members.map((member) => (
+                                    <TableRow key={member.id} hover>
+                                        <TableCell>{member.firstName}</TableCell>
+                                        <TableCell>{member.lastName}</TableCell>
+                                        <TableCell>{getDesignationLabel(member.designationCode)}</TableCell>
+                                        <TableCell>{member.panNumber || '-'}</TableCell>
+                                        <TableCell>{member.aadhaarNumber || '-'}</TableCell>
+                                        <TableCell>
+                                            <Box display="flex">
+                                                <Tooltip title="Edit">
+                                                    <IconButton size="small" color="primary" onClick={() => handleEdit(member)}>
+                                                        <EditIcon />
+                                                    </IconButton>
+                                                </Tooltip>
+                                                <Tooltip title="Delete">
+                                                    <IconButton size="small" color="error" onClick={() => handleDelete(member.id!)}>
+                                                        <DeleteIcon />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            </Box>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+            )}
 
-            <Dialog open={isAdding} onClose={handleClose} maxWidth="md" fullWidth>
+            {/* Dialog for Standard Members */}
+            <Dialog
+                open={isAdding && !isOtherOrg}
+                onClose={handleClose}
+                maxWidth="md"
+                fullWidth
+            >
                 <DialogTitle>{editingId ? "Edit Member" : "Add New Member"}</DialogTitle>
                 <DialogContent>
                     <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ pt: 1 }}>
@@ -392,6 +597,7 @@ export default function OrgMembersPage() {
                     </Box>
                 </DialogContent>
             </Dialog>
+
         </Box>
     );
 }
