@@ -8,9 +8,16 @@ import {
     District,
     Mandal,
     Village,
+    Designation,
 } from "@/types/profile";
 
 export const profileApi = {
+    // Fetch designations for an organization type
+    getDesignations: async (orgType: string): Promise<Designation[]> => {
+        const response = await axiosInstance.get<{ designations: Designation[] }>(`/designations/${orgType}`);
+        return response.data.designations;
+    },
+
     // Get current user's profile
     getProfile: async (projectId: string): Promise<ProfileResponse> => {
         const encodedId = encodeURIComponent(projectId);

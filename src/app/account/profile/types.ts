@@ -1,4 +1,4 @@
-import { OrganizationType } from "@/types/profile";
+import { OrganizationType, OrgMember } from "@/types/profile";
 
 // Regex patterns
 export const PAN_REGEX = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
@@ -53,6 +53,7 @@ export interface IndividualFormData {
 export interface OrganizationFormData {
     informationType: "ORGANIZATION";
     organizationType: OrganizationType;
+    orgTypeDescription?: string;
     organizationName: string;
     panNumber: string;
     hasPastExperience: boolean;
@@ -68,4 +69,5 @@ export interface OrganizationFormData {
     emailId: string;
     websiteUrl?: string;
     imageUrl?: string;
+    orgMembers?: OrgMember[];
 }

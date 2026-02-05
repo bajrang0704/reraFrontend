@@ -51,6 +51,7 @@ export interface IndividualProfile {
 export interface OrganizationProfile {
     informationType: "ORGANIZATION";
     organizationType: OrganizationType;
+    orgTypeDescription?: string;
     organizationName: string;
     panNumber: string;
     hasPastExperience: boolean;
@@ -78,13 +79,27 @@ export interface PastExperience {
     details?: string;
 }
 
-// Organization Other Member
+// Organization Member (matches API spec)
 export interface OrgMember {
-    id: string;
-    name: string;
-    designation: string;
-    panNumber?: string;
-    aadharNumber?: string;
+    id?: string;
+    designationCode: string;
+    firstName: string;
+    middleName?: string;
+    lastName: string;
+    panNumber: string;
+    aadhaarNumber: string;
+    // Address fields (flat, matching API)
+    houseNumber?: string;
+    buildingName?: string;
+    streetName?: string;
+    locality?: string;
+    landmark?: string;
+    state?: string;
+    district?: string;
+    mandal?: string;
+    village?: string;
+    pinCode?: string;
+    imageUrl?: string;
 }
 
 // API Response types
@@ -104,11 +119,17 @@ export interface District {
 export interface Mandal {
     code: string;
     name: string;
-    districtCode: string;
 }
 
 export interface Village {
     code: string;
     name: string;
-    mandalCode: string;
+}
+
+// Designation for organization members
+export interface Designation {
+    code: string;
+    label: string;
+    isMandatory: boolean;
+    sortOrder: number;
 }

@@ -71,6 +71,7 @@ export default function IndividualForm({
                             size="small"
                             fullWidth
                             label="First Name (Surname)"
+                            required
                             {...form.register("firstName", { required: "First name is required" })}
                             error={!!form.formState.errors.firstName}
                             helperText={form.formState.errors.firstName?.message}
@@ -89,6 +90,7 @@ export default function IndividualForm({
                             size="small"
                             fullWidth
                             label="Last Name"
+                            required
                             {...form.register("lastName", { required: "Last name is required" })}
                             error={!!form.formState.errors.lastName}
                             helperText={form.formState.errors.lastName?.message}
@@ -101,6 +103,7 @@ export default function IndividualForm({
                             fullWidth
                             label="PAN Number"
                             placeholder="ABCDE1234F"
+                            required
                             {...form.register("panNumber", {
                                 required: "PAN code is required",
                                 pattern: { value: PAN_REGEX, message: "Invalid PAN format" }
@@ -114,6 +117,7 @@ export default function IndividualForm({
                             size="small"
                             fullWidth
                             label="Aadhar Number"
+                            required
                             {...form.register("aadharNumber", {
                                 required: "Aadhar is required",
                                 pattern: { value: AADHAR_REGEX, message: "Must be 12 digits" }
@@ -128,6 +132,7 @@ export default function IndividualForm({
                             size="small"
                             fullWidth
                             label="Father's Full Name"
+                            required
                             {...form.register("fatherFullName", { required: "Required" })}
                             error={!!form.formState.errors.fatherFullName}
                             helperText={form.formState.errors.fatherFullName?.message}
@@ -135,28 +140,36 @@ export default function IndividualForm({
                     </Grid>
 
                     <Grid size={{ xs: 12, md: 6 }}>
-                        <Typography variant="subtitle2" gutterBottom>Do you have Past Experience?</Typography>
+                        <Typography variant="subtitle2" gutterBottom>
+                            Do you have Past Experience? <span style={{ color: "red" }}>*</span>
+                        </Typography>
                         <Controller
                             name="hasPastExperience"
                             control={form.control}
+                            rules={{ required: "Required" }}
                             render={({ field }) => (
-                                <RadioGroup row {...field} value={field.value ? "YES" : "NO"} onChange={(e) => field.onChange(e.target.value === "YES")}>
-                                    <FormControlLabel value="YES" control={<Radio />} label="Yes" />
-                                    <FormControlLabel value="NO" control={<Radio />} label="No" />
-                                </RadioGroup>
+                                render = {({ field }) => (
+                        <RadioGroup row {...field} value={field.value ? "YES" : "NO"} onChange={(e) => field.onChange(e.target.value === "YES")}>
+                            <FormControlLabel value="YES" control={<Radio />} label="Yes" />
+                            <FormControlLabel value="NO" control={<Radio />} label="No" />
+                        </RadioGroup>
                             )}
                         />
                     </Grid>
                     <Grid size={{ xs: 12, md: 6 }}>
-                        <Typography variant="subtitle2" gutterBottom>Do you have GST Number?</Typography>
+                        <Typography variant="subtitle2" gutterBottom>
+                            Do you have GST Number? <span style={{ color: "red" }}>*</span>
+                        </Typography>
                         <Controller
                             name="hasGst"
                             control={form.control}
+                            rules={{ required: "Required" }}
                             render={({ field }) => (
-                                <RadioGroup row {...field} value={field.value ? "YES" : "NO"} onChange={(e) => field.onChange(e.target.value === "YES")}>
-                                    <FormControlLabel value="YES" control={<Radio />} label="Yes" />
-                                    <FormControlLabel value="NO" control={<Radio />} label="No" />
-                                </RadioGroup>
+                                render = {({ field }) => (
+                        <RadioGroup row {...field} value={field.value ? "YES" : "NO"} onChange={(e) => field.onChange(e.target.value === "YES")}>
+                            <FormControlLabel value="YES" control={<Radio />} label="Yes" />
+                            <FormControlLabel value="NO" control={<Radio />} label="No" />
+                        </RadioGroup>
                             )}
                         />
                     </Grid>
@@ -166,6 +179,7 @@ export default function IndividualForm({
                                 size="small"
                                 fullWidth
                                 label="GST Number"
+                                required
                                 {...form.register("gstNumber", { required: "GST is required" })}
                                 error={!!form.formState.errors.gstNumber}
                             />
@@ -193,6 +207,7 @@ export default function IndividualForm({
                             size="small"
                             fullWidth
                             label="Mobile Number"
+                            required
                             {...form.register("mobileNumber", {
                                 required: "Required",
                                 pattern: { value: MOBILE_REGEX, message: "Invalid Mobile" }
@@ -206,6 +221,7 @@ export default function IndividualForm({
                             size="small"
                             fullWidth
                             label="Email Address"
+                            required
                             {...form.register("emailId", {
                                 required: "Required",
                                 pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: "Invalid email" }
@@ -215,7 +231,14 @@ export default function IndividualForm({
                         />
                     </Grid>
                     <Grid size={{ xs: 12, md: 6 }}>
-                        <TextField size="small" fullWidth label="Office Number" {...form.register("officeNumber")} />
+                        <TextField
+                            size="small"
+                            fullWidth
+                            label="Office Number"
+                            required
+                            {...form.register("officeNumber", { required: "Required" })}
+                            error={!!form.formState.errors.officeNumber}
+                        />
                     </Grid>
                     <Grid size={{ xs: 12, md: 6 }}>
                         <TextField size="small" fullWidth label="Fax Number" {...form.register("faxNumber")} />

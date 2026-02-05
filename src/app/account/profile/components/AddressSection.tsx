@@ -13,6 +13,7 @@ interface AddressSectionProps {
     onDistrictChange: (districtId: string, form: any) => void;
     onMandalChange: (mandalId: string, form: any) => void;
     title?: string;
+    prefix?: string;
 }
 
 export default function AddressSection({
@@ -22,26 +23,68 @@ export default function AddressSection({
     villages,
     onDistrictChange,
     onMandalChange,
-    title = "Address For Official Communication"
+    title = "Address For Official Communication",
+    prefix = "address"
 }: AddressSectionProps) {
+    const getError = (fieldName: string) => {
+        const errors = form.formState.errors as any;
+        const group = errors[prefix];
+        return group?.[fieldName];
+    };
+
     return (
         <Paper sx={{ mb: 4, p: 3 }}>
             <Typography variant="h6" sx={{ mb: 3 }}>{title}</Typography>
             <Grid container spacing={3}>
                 <Grid size={{ xs: 12, md: 6 }}>
-                    <TextField size="small" fullWidth label="House Number" {...form.register("address.houseNumber")} />
+                    <TextField
+                        size="small"
+                        fullWidth
+                        label="House Number"
+                        required
+                        {...form.register(`${prefix}.houseNumber`, { required: "Required" })}
+                        error={!!getError("houseNumber")}
+                    />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
-                    <TextField size="small" fullWidth label="Building Name" {...form.register("address.buildingName")} />
+                    <TextField
+                        size="small"
+                        fullWidth
+                        label="Building Name"
+                        required
+                        {...form.register(`${prefix}.buildingName`, { required: "Required" })}
+                        error={!!getError("buildingName")}
+                    />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
-                    <TextField size="small" fullWidth label="Street Name" {...form.register("address.streetName")} />
+                    <TextField
+                        size="small"
+                        fullWidth
+                        label="Street Name"
+                        required
+                        {...form.register(`${prefix}.streetName`, { required: "Required" })}
+                        error={!!getError("streetName")}
+                    />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
-                    <TextField size="small" fullWidth label="Locality" {...form.register("address.locality")} />
+                    <TextField
+                        size="small"
+                        fullWidth
+                        label="Locality"
+                        required
+                        {...form.register(`${prefix}.locality`, { required: "Required" })}
+                        error={!!getError("locality")}
+                    />
                 </Grid>
                 <Grid size={{ xs: 12 }}>
-                    <TextField size="small" fullWidth label="Landmark" {...form.register("address.landmark")} />
+                    <TextField
+                        size="small"
+                        fullWidth
+                        label="Landmark"
+                        required
+                        {...form.register(`${prefix}.landmark`, { required: "Required" })}
+                        error={!!getError("landmark")}
+                    />
                 </Grid>
 
                 <Grid size={{ xs: 12, md: 4 }}>
@@ -49,7 +92,7 @@ export default function AddressSection({
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
                     <Controller
-                        name="address.district"
+                        name={`${prefix}.district`}
                         control={form.control}
                         rules={{ required: "Required" }}
                         render={({ field }) => (
@@ -59,7 +102,8 @@ export default function AddressSection({
                                 select
                                 fullWidth
                                 label="District"
-                                error={!!(form.formState.errors.address as FieldErrors)?.district}
+                                required
+                                error={!!getError("district")}
                                 onChange={(e) => {
                                     field.onChange(e.target.value);
                                     onDistrictChange(e.target.value, form);
@@ -74,9 +118,8 @@ export default function AddressSection({
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
                     <Controller
-                        name="address.mandal"
+                        name={`${prefix}.mandal`}
                         control={form.control}
-                        rules={{ required: "Required" }}
                         render={({ field }) => (
                             <TextField
                                 {...field}
@@ -84,8 +127,8 @@ export default function AddressSection({
                                 select
                                 fullWidth
                                 label="Mandal"
-                                disabled={!form.watch("address.district")}
-                                error={!!(form.formState.errors.address as FieldErrors)?.mandal}
+                                disabled={!form.watch(`${prefix}.district`)}
+                                error={!!getError("mandal")}
                                 onChange={(e) => {
                                     field.onChange(e.target.value);
                                     onMandalChange(e.target.value, form);
@@ -100,9 +143,8 @@ export default function AddressSection({
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
                     <Controller
-                        name="address.villageCityTown"
+                        name={`${prefix}.villageCityTown`}
                         control={form.control}
-                        rules={{ required: "Required" }}
                         render={({ field }) => (
                             <TextField
                                 {...field}
@@ -110,8 +152,8 @@ export default function AddressSection({
                                 select
                                 fullWidth
                                 label="Village/City/Town"
-                                disabled={!form.watch("address.mandal")}
-                                error={!!(form.formState.errors.address as FieldErrors)?.villageCityTown}
+                                disabled={!form.watch(`${prefix}.mandal`)}
+                                error={!!getError("villageCityTown")}
                             >
                                 {villages.map((v) => (
                                     <MenuItem key={v.code} value={v.code}>{v.name}</MenuItem>
@@ -125,11 +167,12 @@ export default function AddressSection({
                         size="small"
                         fullWidth
                         label="Pin Code"
-                        {...form.register("address.pincode", {
+                        required
+                        {...form.register(`${prefix}.pincode`, {
                             required: "Required",
                             pattern: { value: PINCODE_REGEX, message: "Invalid Pincode" }
                         })}
-                        error={!!(form.formState.errors.address as FieldErrors)?.pincode}
+                        error={!!getError("pincode")}
                     />
                 </Grid>
             </Grid>
