@@ -10,6 +10,7 @@ import {
     ProjectAddress,
     BankAccount,
     GISData,
+    Building,
 } from "@/types/project";
 
 export const projectApi = {
@@ -21,10 +22,11 @@ export const projectApi = {
     },
 
     // List all projects for a profile
-    listProjects: async (profileId: string): Promise<Project[]> => {
+    listProjects: async (profileId: string, hasOtherPromoters?: boolean): Promise<Project[]> => {
         const encodedId = encodeURIComponent(profileId);
+        const queryParam = hasOtherPromoters !== undefined ? `?hasOtherPromoters=${hasOtherPromoters}` : '';
         try {
-            const response = await axiosInstance.get<ProjectListResponse>(`/profile/${encodedId}/projects`);
+            const response = await axiosInstance.get<ProjectListResponse>(`/profile/${encodedId}/projects${queryParam}`);
             return response.data.data || [];
         } catch (error: any) {
             if (error.response?.status === 404) return [];
@@ -105,5 +107,82 @@ export const projectApi = {
         const encodedId = encodeURIComponent(projectId);
         const response = await axiosInstance.post<ProjectResponse>(`/projects/${encodedId}/submit`);
         return response.data;
+    },
+
+    // --- Other Promoters (Co-Promoters) APIs ---
+
+    // List Other Promoters
+    getOtherPromoters: async (projectId: string): Promise<any[]> => {
+        const encodedId = encodeURIComponent(projectId);
+        try {
+            const response = await axiosInstance.get<{ success: boolean; data: any[] }>(`/projects/${encodedId}/other-promoters`);
+            return response.data.data;
+        } catch (error: any) {
+            console.error("Failed to fetch other promoters", error);
+            return [];
+        }
+    },
+
+    // Add Other Promoter
+    addOtherPromoter: async (projectId: string, data: any): Promise<{ success: boolean; data: any }> => {
+        const encodedId = encodeURIComponent(projectId);
+        const response = await axiosInstance.post(`/projects/${encodedId}/other-promoters`, data);
+        return response.data;
+    },
+
+    // Update Other Promoter
+    updateOtherPromoter: async (projectId: string, promoterId: string, data: any): Promise<{ success: boolean; data: any }> => {
+        const encodedId = encodeURIComponent(projectId);
+        const response = await axiosInstance.put(`/projects/${encodedId}/other-promoters/${promoterId}`, data);
+        return response.data;
+    },
+
+    // Delete Other Promoter
+    deleteOtherPromoter: async (projectId: string, promoterId: string): Promise<void> => {
+        const encodedId = encodeURIComponent(projectId);
+        await axiosInstance.delete(`/projects/${encodedId}/other-promoters/${promoterId}`);
+    },
+
+    // Upsert Bank Details for Other Promoter (Area Share)
+    upsertPromoterBankDetails: async (projectId: string, promoterId: string, data: any): Promise<{ success: boolean; data: any }> => {
+        const encodedId = encodeURIComponent(projectId);
+        const response = await axiosInstance.post(`/projects/${encodedId}/other-promoters/${promoterId}/bank-details`, data);
+        return response.data;
+    },
+
+
+    // --- Building APIs ---
+
+    // List Buildings
+    listBuildings: async (projectId: string): Promise<Building[]> => {
+        const encodedId = encodeURIComponent(projectId);
+        try {
+            const response = await axiosInstance.get<{ success: boolean; data: Building[] }>(`/projects/${encodedId}/buildings`);
+            return response.data.data || [];
+        } catch (error: any) {
+            console.error("Failed to list buildings", error);
+            if (error.response?.status === 404) return [];
+            return [];
+        }
+    },
+
+    // Create Building
+    createBuilding: async (projectId: string, data: Omit<Building, 'id' | 'projectId'>): Promise<{ success: boolean; data: Building }> => {
+        const encodedId = encodeURIComponent(projectId);
+        const response = await axiosInstance.post(`/projects/${encodedId}/buildings`, data);
+        return response.data;
+    },
+
+    // Get Building
+    getBuilding: async (buildingId: string): Promise<{ success: boolean; data: Building }> => {
+        const encodedId = encodeURIComponent(buildingId);
+        const response = await axiosInstance.get(`/buildings/${encodedId}`);
+        return response.data;
+    },
+
+    // Delete Building
+    deleteBuilding: async (buildingId: string): Promise<void> => {
+        const encodedId = encodeURIComponent(buildingId);
+        await axiosInstance.delete(`/buildings/${encodedId}`);
     },
 };

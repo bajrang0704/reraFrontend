@@ -37,6 +37,8 @@ import {
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import AddLocationAltIcon from "@mui/icons-material/AddLocationAlt";
+import LocationPicker from "@/components/common/LocationPicker";
 
 // Dropdown options
 const AUTHORITY_OPTIONS: { value: AuthorityName; label: string }[] = [
@@ -103,6 +105,33 @@ interface ProjectFormData {
     // GIS
     latitude: number;
     longitude: number;
+
+    // Bank Details - Collection Account (100%)
+    collectionAccountId?: string;
+    collectionBankName: string;
+    collectionBranchName: string;
+
+    collectionIfscCode: string;
+    collectionAccountNumber: string;
+    collectionBankAddress: string;
+
+    // Bank Details - Separate Account (70%)
+    separateAccountId?: string;
+    separateBankName: string;
+    separateBranchName: string;
+
+    separateIfscCode: string;
+    separateAccountNumber: string;
+    separateBankAddress: string;
+
+    // Bank Details - Transaction Account (30%)
+    transactionAccountId?: string;
+    transactionBankName: string;
+    transactionBranchName: string;
+
+    transactionIfscCode: string;
+    transactionAccountNumber: string;
+    transactionBankAddress: string;
 }
 
 const defaultValues: ProjectFormData = {
@@ -140,6 +169,43 @@ const defaultValues: ProjectFormData = {
     village: "",
     latitude: 0,
     longitude: 0,
+
+    // Bank Details Defaults
+    collectionAccountId: "",
+    collectionBankName: "",
+    collectionBranchName: "",
+
+    collectionIfscCode: "",
+    collectionAccountNumber: "",
+    collectionBankAddress: "",
+
+    separateAccountId: "",
+    separateBankName: "",
+    separateBranchName: "",
+
+    separateIfscCode: "",
+    separateAccountNumber: "",
+    separateBankAddress: "",
+
+    transactionAccountId: "",
+    transactionBankName: "",
+    transactionBranchName: "",
+
+    transactionIfscCode: "",
+    transactionAccountNumber: "",
+    transactionBankAddress: "",
+};
+
+
+
+const formatDateForInput = (dateString?: string | null) => {
+    if (!dateString) return "";
+    try {
+        const date = new Date(dateString);
+        return date.toISOString().split("T")[0];
+    } catch (e) {
+        return "";
+    }
 };
 
 export default function AddProjectPage({ params }: { params: Promise<{ id: string }> }) {
@@ -153,6 +219,8 @@ export default function AddProjectPage({ params }: { params: Promise<{ id: strin
     const [error, setError] = useState<string | null>(null);
     const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
     const [canEditBuildingUnits, setCanEditBuildingUnits] = useState(true);
+    const [isMapOpen, setIsMapOpen] = useState(false);
+
 
     // Location dropdowns
     // State is fixed to Telangana
@@ -345,6 +413,58 @@ export default function AddProjectPage({ params }: { params: Promise<{ id: strin
                     pincode: data.pincode,
                 });
 
+                // Bank Accounts
+                // Collection Account (100%)
+                if (data.collectionBankName) {
+                    const payload: any = {
+                        accountType: "COLLECTION_100",
+                        bankName: data.collectionBankName,
+                        branchName: data.collectionBranchName,
+                        ifscCode: data.collectionIfscCode,
+                        accountNumber: data.collectionAccountNumber,
+                        bankAddress: data.collectionBankAddress,
+                    };
+                    if (data.collectionAccountId) {
+                        await projectApi.updateBankAccount(projectUuid, data.collectionAccountId, payload);
+                    } else {
+                        await projectApi.addBankAccount(projectUuid, payload);
+                    }
+                }
+
+                // Separate Account (70%)
+                if (data.separateBankName) {
+                    const payload: any = {
+                        accountType: "SEPARATE_70",
+                        bankName: data.separateBankName,
+                        branchName: data.separateBranchName,
+                        ifscCode: data.separateIfscCode,
+                        accountNumber: data.separateAccountNumber,
+                        bankAddress: data.separateBankAddress,
+                    };
+                    if (data.separateAccountId) {
+                        await projectApi.updateBankAccount(projectUuid, data.separateAccountId, payload);
+                    } else {
+                        await projectApi.addBankAccount(projectUuid, payload);
+                    }
+                }
+
+                // Transaction Account (30%)
+                if (data.transactionBankName) {
+                    const payload: any = {
+                        accountType: "TRANSACTION_30",
+                        bankName: data.transactionBankName,
+                        branchName: data.transactionBranchName,
+                        ifscCode: data.transactionIfscCode,
+                        accountNumber: data.transactionAccountNumber,
+                        bankAddress: data.transactionBankAddress,
+                    };
+                    if (data.transactionAccountId) {
+                        await projectApi.updateBankAccount(projectUuid, data.transactionAccountId, payload);
+                    } else {
+                        await projectApi.addBankAccount(projectUuid, payload);
+                    }
+                }
+
                 // GIS
                 if (data.latitude || data.longitude) {
                     await projectApi.upsertGIS(projectUuid, {
@@ -398,15 +518,19 @@ export default function AddProjectPage({ params }: { params: Promise<{ id: strin
             const p = result.data;
             setCanEditBuildingUnits(result.canEditTotalBuildingUnits !== false);
 
+            const collectionAcc = p.bankAccounts?.find((b) => b.accountType === "COLLECTION_100");
+            const separateAcc = p.bankAccounts?.find((b) => b.accountType === "SEPARATE_70");
+            const transactionAcc = p.bankAccounts?.find((b) => b.accountType === "TRANSACTION_30");
+
             reset({
                 authorityName: p.authorityName,
                 planApprovalNumber: p.planApprovalNumber,
                 projectName: p.projectName,
                 projectType: p.projectType,
                 projectStatus: p.projectStatus,
-                approvedDate: p.approvedDate,
-                proposedCompletionDate: p.proposedCompletionDate,
-                revisedProposedCompletionDate: p.revisedProposedCompletionDate || "",
+                approvedDate: formatDateForInput(p.approvedDate),
+                proposedCompletionDate: formatDateForInput(p.proposedCompletionDate),
+                revisedProposedCompletionDate: formatDateForInput(p.revisedProposedCompletionDate),
                 hasLitigations: p.hasLitigations ? "true" : "false",
                 hasOtherPromoters: p.hasOtherPromoters ? "true" : "false",
                 isMsbOrHighrise: p.isMsbOrHighrise ? "true" : "false",
@@ -431,6 +555,28 @@ export default function AddProjectPage({ params }: { params: Promise<{ id: strin
                 street: p.address?.street || "",
                 locality: p.address?.locality || "",
                 pincode: p.address?.pincode || "",
+
+                // Bank Details
+                collectionAccountId: collectionAcc?.id || "",
+                collectionBankName: collectionAcc?.bankName || "",
+                collectionBranchName: collectionAcc?.branchName || "",
+                collectionIfscCode: collectionAcc?.ifscCode || "",
+                collectionAccountNumber: collectionAcc?.accountNumber || "",
+                collectionBankAddress: collectionAcc?.bankAddress || "",
+
+                separateAccountId: separateAcc?.id || "",
+                separateBankName: separateAcc?.bankName || "",
+                separateBranchName: separateAcc?.branchName || "",
+                separateIfscCode: separateAcc?.ifscCode || "",
+                separateAccountNumber: separateAcc?.accountNumber || "",
+                separateBankAddress: separateAcc?.bankAddress || "",
+
+                transactionAccountId: transactionAcc?.id || "",
+                transactionBankName: transactionAcc?.bankName || "",
+                transactionBranchName: transactionAcc?.branchName || "",
+                transactionIfscCode: transactionAcc?.ifscCode || "",
+                transactionAccountNumber: transactionAcc?.accountNumber || "",
+                transactionBankAddress: transactionAcc?.bankAddress || "",
                 latitude: p.gis?.latitude || 0,
                 longitude: p.gis?.longitude || 0,
             });
@@ -753,10 +899,97 @@ export default function AddProjectPage({ params }: { params: Promise<{ id: strin
 
                 <Divider sx={{ my: 3 }} />
 
-                {/* GIS Section */}
-                <Typography variant="subtitle1" sx={{ color: "green", fontWeight: "bold", mb: 2 }}>
-                    GIS Details
+                {/* Bank Details Section */}
+                <Typography variant="subtitle1" sx={{ color: "green", fontWeight: "bold", mb: 0.5 }}>
+                    Details of separate bank account as per section 4 (2)(l)(D) of the Act
                 </Typography>
+                <Typography variant="body2" sx={{ color: "text.secondary", mb: 2 }}>
+                    Please refer to Circular No. 1558/TG RERA/2024, dated 09.09.2024
+                </Typography>
+
+                {/* Collection Account (100%) */}
+                <Typography variant="subtitle2" sx={{ color: "#0288d1", fontWeight: "bold", mb: 2, mt: 3 }}>
+                    Collection Account of the Project (100%)
+                </Typography>
+                <Grid container spacing={2} sx={{ mb: 3 }}>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <TextField size="small" fullWidth label="Bank Name *" InputLabelProps={{ shrink: true }} {...register("collectionBankName", { required: "Required" })} error={!!errors.collectionBankName} />
+                    </Grid>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <TextField size="small" fullWidth label="Branch Name *" InputLabelProps={{ shrink: true }} {...register("collectionBranchName", { required: "Required" })} error={!!errors.collectionBranchName} />
+                    </Grid>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <TextField size="small" fullWidth label="IFSC Code *" InputLabelProps={{ shrink: true }} {...register("collectionIfscCode", { required: "Required" })} error={!!errors.collectionIfscCode} />
+                    </Grid>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <TextField size="small" fullWidth label="Bank A/c Number *" InputLabelProps={{ shrink: true }} {...register("collectionAccountNumber", { required: "Required" })} error={!!errors.collectionAccountNumber} />
+                    </Grid>
+                    <Grid size={{ xs: 12 }}>
+                        <TextField size="small" fullWidth label="Bank Address *" InputLabelProps={{ shrink: true }} {...register("collectionBankAddress", { required: "Required" })} error={!!errors.collectionBankAddress} />
+                    </Grid>
+                </Grid>
+
+                {/* Separate Account (70%) */}
+                <Typography variant="subtitle2" sx={{ color: "#0288d1", fontWeight: "bold", mb: 2, mt: 3 }}>
+                    Separate Account of the Project (70%)
+                </Typography>
+                <Grid container spacing={2} sx={{ mb: 3 }}>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <TextField size="small" fullWidth label="Bank Name *" InputLabelProps={{ shrink: true }} {...register("separateBankName", { required: "Required" })} error={!!errors.separateBankName} />
+                    </Grid>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <TextField size="small" fullWidth label="Branch Name *" InputLabelProps={{ shrink: true }} {...register("separateBranchName", { required: "Required" })} error={!!errors.separateBranchName} />
+                    </Grid>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <TextField size="small" fullWidth label="IFSC Code *" InputLabelProps={{ shrink: true }} {...register("separateIfscCode", { required: "Required" })} error={!!errors.separateIfscCode} />
+                    </Grid>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <TextField size="small" fullWidth label="Bank A/c Number *" InputLabelProps={{ shrink: true }} {...register("separateAccountNumber", { required: "Required" })} error={!!errors.separateAccountNumber} />
+                    </Grid>
+                    <Grid size={{ xs: 12 }}>
+                        <TextField size="small" fullWidth label="Bank Address *" InputLabelProps={{ shrink: true }} {...register("separateBankAddress", { required: "Required" })} error={!!errors.separateBankAddress} />
+                    </Grid>
+                </Grid>
+
+                {/* Transaction Account (30%) */}
+                <Typography variant="subtitle2" sx={{ color: "#0288d1", fontWeight: "bold", mb: 2, mt: 3 }}>
+                    Transaction Account of the Project (30%)
+                </Typography>
+                <Grid container spacing={2} sx={{ mb: 3 }}>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <TextField size="small" fullWidth label="Bank Name *" InputLabelProps={{ shrink: true }} {...register("transactionBankName", { required: "Required" })} error={!!errors.transactionBankName} />
+                    </Grid>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <TextField size="small" fullWidth label="Branch Name *" InputLabelProps={{ shrink: true }} {...register("transactionBranchName", { required: "Required" })} error={!!errors.transactionBranchName} />
+                    </Grid>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <TextField size="small" fullWidth label="IFSC Code *" InputLabelProps={{ shrink: true }} {...register("transactionIfscCode", { required: "Required" })} error={!!errors.transactionIfscCode} />
+                    </Grid>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <TextField size="small" fullWidth label="Bank A/c Number *" InputLabelProps={{ shrink: true }} {...register("transactionAccountNumber", { required: "Required" })} error={!!errors.transactionAccountNumber} />
+                    </Grid>
+                    <Grid size={{ xs: 12 }}>
+                        <TextField size="small" fullWidth label="Bank Address *" InputLabelProps={{ shrink: true }} {...register("transactionBankAddress", { required: "Required" })} error={!!errors.transactionBankAddress} />
+                    </Grid>
+                </Grid>
+
+                <Divider sx={{ my: 3 }} />
+
+                {/* GIS Section */}
+                <Box display="flex" alignItems="center" gap={2} mb={2}>
+                    <Typography variant="subtitle1" sx={{ color: "green", fontWeight: "bold" }}>
+                        GIS Details
+                    </Typography>
+                    <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<AddLocationAltIcon />}
+                        onClick={() => setIsMapOpen(true)}
+                    >
+                        Pick on Map
+                    </Button>
+                </Box>
+
 
                 <Grid container spacing={2} sx={{ mb: 3 }}>
                     <Grid size={{ xs: 12, md: 6 }}>
@@ -784,6 +1017,19 @@ export default function AddProjectPage({ params }: { params: Promise<{ id: strin
             <Typography variant="h6" sx={{ mt: 4, mb: 2, color: "primary.main" }}>
                 Project Details
             </Typography>
+
+            {/* Location Picker Modal */}
+            <LocationPicker
+                open={isMapOpen}
+                onClose={() => setIsMapOpen(false)}
+                onLocationSelect={(lat, lng) => {
+                    setValue("latitude", lat);
+                    setValue("longitude", lng);
+                }}
+                initialLat={watch("latitude")}
+                initialLng={watch("longitude")}
+            />
+
 
             <TableContainer component={Paper} variant="outlined">
                 <Table size="small">

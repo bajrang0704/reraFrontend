@@ -5,6 +5,9 @@ export type AuthorityName = 'DTCP' | 'GHMC' | 'TGIIC' | 'HMDA';
 export type ProjectStatusType = 'ONGOING' | 'NEW';
 export type ProjectType = 'COMMERCIAL' | 'RESIDENTIAL' | 'PLOTTED_DEVELOPMENT' | 'MIXED_DEVELOPMENT';
 export type BankAccountType = 'COLLECTION_100' | 'SEPARATE_70' | 'TRANSACTION_30';
+export type PromoterType = 'INDIVIDUAL' | 'COMPANY' | 'PARTNERSHIP_FIRM' | 'COMPETENT_AUTHORITY' | 'LLP' | 'TRUST' | 'HINDU_UNDIVIDED_FAMILY' | 'OTHERS';
+export type AgreementType = 'REVENUE_SHARE' | 'AREA_SHARE';
+
 
 // Land Details
 export interface LandDetail {
@@ -60,6 +63,75 @@ export interface GISData {
     longitude: number;
 }
 
+// Other Promoter (Land Owner / Investor)
+export interface OtherPromoter {
+    id: string;
+    promoterName: string;
+    promoterType: PromoterType;
+    promoterTypeOther?: string;
+
+    // Address
+    blockNumber: string;
+    buildingName: string;
+    streetName: string;
+    locality: string;
+    landmark: string;
+    state: string;
+    district: string;
+    mandal: string;
+    village: string;
+    pincode: string;
+
+    // Contact
+    contactPersonName: string;
+    contactDesignation: string;
+    mobileNumber: string;
+    officeNumber?: string;
+    faxNumber?: string;
+    email: string;
+
+    agreementType: AgreementType;
+
+    // Bank Details (fetched/managed if AREA_SHARE)
+    bankDetails?: {
+        bankName: string;
+        accountNumber: string;
+        branchName: string;
+        bankAddress: string;
+        ifscCode: string;
+    };
+}
+
+
+// Apartment Type Details
+export interface ApartmentType {
+    id?: string;
+    floorNumber: number;
+    isUnderMortgage: boolean;
+    apartmentType: string;
+    saleableAreaSqm: number;
+    proposedNumberOfUnits: number;
+    numberOfUnitsBooked: number;
+}
+
+// Building Details
+export interface Building {
+    id: string;
+    projectId: string; // The backend uses display ID usually, but check API. Doc says path parameter.
+    buildingName: string;
+    proposedCompletionDate: string;
+
+    numberOfBasements: number;
+    numberOfPodiums: number;
+    numberOfSlabsSuperStructure: number;
+    numberOfStilts: number;
+
+    totalParkingAreaSqm: number;
+    totalNumberOfFloors: number;
+
+    apartmentTypes: ApartmentType[];
+}
+
 // Main Project Interface
 export interface Project {
     id: string;
@@ -81,7 +153,9 @@ export interface Project {
     address?: ProjectAddress | null;
     bankAccounts: BankAccount[];
     gis?: GISData | null;
+    otherPromoters?: OtherPromoter[]; // Optional list if included in full project details
     applicationStatus?: string;
+
 }
 
 // Create Project Request (minimal required fields)
