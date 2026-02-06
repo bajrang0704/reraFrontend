@@ -132,6 +132,37 @@ export interface Building {
     apartmentTypes: ApartmentType[];
 }
 
+// Common Areas & Facilities
+export interface CommonAreaSummary {
+    openParkingAreaSqm: number;
+    coveredParkingCount: number;
+    openParkingUnitsBooked: number;
+    coveredParkingUnitsBooked: number;
+    openParkingProgressPercent: number;
+    coveredParkingProgressPercent: number;
+}
+
+export type FacilityScope = 'SYSTEM' | 'PROJECT_CUSTOM';
+
+export interface Facility {
+    facilityId?: string; // Optional for new custom items
+    masterId?: string;   // For system items
+    code?: string;
+    name: string;
+    scope: FacilityScope;
+    proposed: boolean;
+    percentageOfCompletion: number;
+    details: string;
+}
+
+export interface CommonAreaResponse {
+    success: boolean;
+    data: {
+        summary: CommonAreaSummary;
+        facilities: Facility[];
+    };
+}
+
 // Main Project Interface
 export interface Project {
     id: string;

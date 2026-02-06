@@ -185,4 +185,42 @@ export const projectApi = {
         const encodedId = encodeURIComponent(buildingId);
         await axiosInstance.delete(`/buildings/${encodedId}`);
     },
+
+    // --- Common Areas & Facilities APIs ---
+
+    // Get Common Areas
+    getCommonAreas: async (projectId: string): Promise<any> => {
+        const encodedId = encodeURIComponent(projectId);
+        try {
+            const response = await axiosInstance.get(`/projects/${encodedId}/common-areas`);
+            return response.data;
+        } catch (error: any) {
+            console.error("Failed to fetch common areas", error);
+            if (error.response?.status === 404) {
+                // Return default structure if not found
+                return {
+                    success: true,
+                    data: {
+                        summary: {
+                            openParkingAreaSqm: 0,
+                            coveredParkingCount: 0,
+                            openParkingUnitsBooked: 0,
+                            coveredParkingUnitsBooked: 0,
+                            openParkingProgressPercent: 0,
+                            coveredParkingProgressPercent: 0
+                        },
+                        facilities: []
+                    }
+                };
+            }
+            throw error;
+        }
+    },
+
+    // Save Common Areas
+    saveCommonAreas: async (projectId: string, data: any): Promise<any> => {
+        const encodedId = encodeURIComponent(projectId);
+        const response = await axiosInstance.put(`/projects/${encodedId}/common-areas`, data);
+        return response.data;
+    },
 };
