@@ -27,6 +27,7 @@ import {
     Alert,
     Snackbar,
     CircularProgress,
+    Divider,
 } from "@mui/material";
 import { Delete as DeleteIcon, Edit as EditIcon, Add as AddIcon } from "@mui/icons-material";
 import { projectApi } from "@/lib/api/project";
@@ -75,6 +76,16 @@ const defaultValues: BuildingFormData = {
     apartmentTypes: [],
 };
 
+// Default state for the "Add New Input" row
+const defaultNewApartment: ApartmentType = {
+    floorNumber: 1,
+    isUnderMortgage: false,
+    apartmentType: "",
+    saleableAreaSqm: 0,
+    proposedNumberOfUnits: 0,
+    numberOfUnitsBooked: 0,
+};
+
 export default function BuildingDetailsPage() {
     const { user } = useAuth();
     const [projects, setProjects] = useState<Project[]>([]);
@@ -104,8 +115,6 @@ export default function BuildingDetailsPage() {
         defaultValues,
     });
 
-    // Helper to bypass strict Resolver type checking if causing issues, purely type alias
-    // This resolves the "ResolverOptions" mismatch error by loosening the strict generic binding momentarily
     function useFormLike(props: any) {
         return useForm<BuildingFormData>(props);
     }
@@ -116,6 +125,9 @@ export default function BuildingDetailsPage() {
     });
 
     const totalFloors = watch("totalNumberOfFloors");
+
+    // Local state for the "Add Apartment" input row
+    const [newApartment, setNewApartment] = useState<ApartmentType>(defaultNewApartment);
 
     // Close Snackbar
     const handleCloseSnackbar = () => {
@@ -130,8 +142,6 @@ export default function BuildingDetailsPage() {
                     setLoading(true);
                     const response = await profileApi.getProfile(user.loginId);
 
-                    // Robust ID extraction to handle varied API responses
-                    // ProfileResponse has .profile, but manual casting handles wrapper inconsistencies (data.data vs data.profile)
                     const profileObj = (response as any).data || response.profile || response;
                     const profileId = (profileObj as any)?.id;
 
@@ -139,7 +149,6 @@ export default function BuildingDetailsPage() {
                         const list = await projectApi.listProjects(profileId);
                         setProjects(list);
                     } else {
-                        console.warn("Could not resolve Profile ID from response", response);
                         setSnackbar({ open: true, message: "Profile not found. Please complete profile first.", severity: "info" });
                     }
                 } catch (e) {
@@ -169,17 +178,14 @@ export default function BuildingDetailsPage() {
             const project = response.data;
             setSelectedProject(project);
 
-            // Set Max Buildings
             const max = project.landDetail?.proposedBuildingUnits || 0;
             setMaxBuildings(max);
 
-            // Fetch existing buildings
             const realProjectId = project.projectId || project.id;
             const list = await projectApi.listBuildings(realProjectId);
             setBuildings(list);
             setCurrentBuildingCount(list.length);
 
-            // Reset form but keep project selected
             reset({ ...defaultValues, projectUuid });
 
         } catch (e) {
@@ -190,11 +196,26 @@ export default function BuildingDetailsPage() {
         }
     };
 
-    // 3. Handle Submit
+    // 3. Handle Add Apartment Type to List (Local Verification)
+    const handleAddApartmentType = () => {
+        // Basic validation
+        if (!newApartment.apartmentType) {
+            setSnackbar({ open: true, message: "Please enter Apartment Type", severity: "error" });
+            return;
+        }
+        if (newApartment.numberOfUnitsBooked > newApartment.proposedNumberOfUnits) {
+            setSnackbar({ open: true, message: "Booked units cannot exceed proposed units", severity: "error" });
+            return;
+        }
+
+        append({ ...newApartment });
+        setNewApartment(defaultNewApartment);
+    };
+
+    // 4. Handle Submit
     const onSubmit: SubmitHandler<BuildingFormData> = async (data) => {
         if (!selectedProject) return;
 
-        // Backend Building Count Validation
         if (!editingBuildingId && currentBuildingCount >= maxBuildings) {
             setSnackbar({ open: true, message: `Cannot add more buildings. Max allowed: ${maxBuildings}`, severity: "error" });
             return;
@@ -204,17 +225,13 @@ export default function BuildingDetailsPage() {
             setLoading(true);
             const apiProjectId = selectedProject.projectId || selectedProject.id;
 
-            // Transform data for API
-            // Omit projectUuid and id, ensure strict types
             const { projectUuid, ...rest } = data;
             const payload: Omit<Building, 'id' | 'projectId'> = {
                 ...rest,
-                // Ensure apartmentTypes is defined
                 apartmentTypes: rest.apartmentTypes || []
             };
 
             if (editingBuildingId) {
-                // Currently API only supports Create/Delete/List/Get
                 await projectApi.deleteBuilding(editingBuildingId);
                 await projectApi.createBuilding(apiProjectId, payload);
                 setSnackbar({ open: true, message: "Building updated successfully!", severity: "success" });
@@ -223,13 +240,11 @@ export default function BuildingDetailsPage() {
                 setSnackbar({ open: true, message: "Building saved successfully!", severity: "success" });
             }
 
-            // Refresh List
             const list = await projectApi.listBuildings(apiProjectId);
             setBuildings(list);
             setCurrentBuildingCount(list.length);
             setEditingBuildingId(null);
 
-            // Reset Form (keep project selected)
             reset({ ...defaultValues, projectUuid: selectedProject.id });
 
         } catch (e: any) {
@@ -265,7 +280,6 @@ export default function BuildingDetailsPage() {
     const handleEdit = (building: Building) => {
         setEditingBuildingId(building.id);
 
-        // Map Building to Form Data
         const formData: BuildingFormData = {
             projectUuid: selectedProject?.id || "",
             buildingName: building.buildingName,
@@ -402,120 +416,139 @@ export default function BuildingDetailsPage() {
                         </CardContent>
                     </Card>
 
-                    {/* Apartment Type Details */}
+                    {/* Apartment Type Details - UX Update: Input Row + Table */}
                     <Card sx={{ mb: 4 }} variant="outlined">
                         <CardHeader
                             title="Apartment Configuration"
-                            subheader="Define apartment types per floor"
+                            subheader="Add apartment types below"
                             titleTypographyProps={{ variant: "subtitle1", fontWeight: "bold", color: "primary" }}
-                            action={
-                                <Button startIcon={<AddIcon />} variant="outlined" size="small" onClick={() => append({
-                                    floorNumber: 1,
-                                    isUnderMortgage: false,
-                                    apartmentType: "",
-                                    saleableAreaSqm: 0,
-                                    proposedNumberOfUnits: 0,
-                                    numberOfUnitsBooked: 0
-                                })}>
-                                    Add Type
-                                </Button>
-                            }
                         />
                         <CardContent>
-                            {fields.map((field, index) => (
-                                <Box key={field.id} sx={{ mb: 2, p: 2, border: '1px solid #e0e0e0', borderRadius: 2, position: 'relative', bgcolor: '#fff' }}>
-                                    <IconButton
+                            {/* Input Row */}
+                            <Grid container spacing={2} alignItems="center" sx={{ mb: 3 }}>
+                                <Grid size={{ xs: 12, md: 2 }}>
+                                    <TextField
+                                        select
+                                        fullWidth
                                         size="small"
-                                        color="error"
-                                        onClick={() => remove(index)}
-                                        sx={{ position: 'absolute', top: 8, right: 8 }}
+                                        label="Floor No"
+                                        value={newApartment.floorNumber}
+                                        onChange={(e) => setNewApartment({ ...newApartment, floorNumber: Number(e.target.value) })}
+                                        InputLabelProps={{ shrink: true }}
                                     >
-                                        <DeleteIcon />
-                                    </IconButton>
+                                        {Array.from({ length: Number(totalFloors || 20) }, (_, i) => i + 1).map(num => (
+                                            <MenuItem key={num} value={num}>{num}</MenuItem>
+                                        ))}
+                                    </TextField>
+                                </Grid>
+                                <Grid size={{ xs: 12, md: 2 }}>
+                                    <TextField
+                                        fullWidth size="small"
+                                        label="Type (e.g. 3BHK)"
+                                        value={newApartment.apartmentType}
+                                        onChange={(e) => setNewApartment({ ...newApartment, apartmentType: e.target.value })}
+                                        InputLabelProps={{ shrink: true }}
+                                    />
+                                </Grid>
+                                <Grid size={{ xs: 12, md: 2 }}>
+                                    <TextField
+                                        type="number" fullWidth size="small"
+                                        label="Area (sqm)"
+                                        value={newApartment.saleableAreaSqm}
+                                        onChange={(e) => setNewApartment({ ...newApartment, saleableAreaSqm: Number(e.target.value) })}
+                                        InputLabelProps={{ shrink: true }}
+                                    />
+                                </Grid>
+                                <Grid size={{ xs: 12, md: 2 }}>
+                                    <TextField
+                                        type="number" fullWidth size="small"
+                                        label="Proposed Units"
+                                        value={newApartment.proposedNumberOfUnits}
+                                        onChange={(e) => setNewApartment({ ...newApartment, proposedNumberOfUnits: Number(e.target.value) })}
+                                        InputLabelProps={{ shrink: true }}
+                                    />
+                                </Grid>
+                                <Grid size={{ xs: 12, md: 2 }}>
+                                    <TextField
+                                        type="number" fullWidth size="small"
+                                        label="Booked Units"
+                                        value={newApartment.numberOfUnitsBooked}
+                                        onChange={(e) => setNewApartment({ ...newApartment, numberOfUnitsBooked: Number(e.target.value) })}
+                                        InputLabelProps={{ shrink: true }}
+                                    />
+                                </Grid>
+                                <Grid size={{ xs: 12, md: 1 }}>
+                                    <FormControlLabel
+                                        control={
+                                            <Checkbox
+                                                checked={newApartment.isUnderMortgage}
+                                                onChange={(e) => setNewApartment({ ...newApartment, isUnderMortgage: e.target.checked })}
+                                                size="small"
+                                            />
+                                        }
+                                        label={<Typography variant="caption">Mortgage?</Typography>}
+                                    />
+                                </Grid>
+                                <Grid size={{ xs: 12, md: 1 }}>
+                                    <Button variant="contained" size="small" onClick={handleAddApartmentType}>
+                                        Add
+                                    </Button>
+                                </Grid>
+                            </Grid>
 
-                                    <Typography variant="caption" sx={{ display: 'block', mb: 1, fontWeight: 'bold', color: 'text.secondary' }}>
-                                        #{index + 1}
-                                    </Typography>
+                            <Divider sx={{ my: 2 }} />
 
-                                    <Grid container spacing={2}>
-                                        <Grid size={{ xs: 12, md: 3 }}>
-                                            <Controller
-                                                name={`apartmentTypes.${index}.floorNumber`}
-                                                control={control}
-                                                render={({ field }) => (
-                                                    <TextField
-                                                        select
-                                                        fullWidth
-                                                        size="small"
-                                                        label="Floor No *"
-                                                        {...field}
-                                                        value={field.value || ""}
-                                                        error={!!errors.apartmentTypes?.[index]?.floorNumber}
-                                                    >
-                                                        {Array.from({ length: Number(totalFloors || 20) }, (_, i) => i + 1).map(num => (
-                                                            <MenuItem key={num} value={num}>{num}</MenuItem>
-                                                        ))}
-                                                    </TextField>
-                                                )}
-                                            />
-                                        </Grid>
-                                        <Grid size={{ xs: 12, md: 3 }}>
-                                            <TextField
-                                                fullWidth size="small"
-                                                label="Type (e.g. 3BHK) *"
-                                                {...register(`apartmentTypes.${index}.apartmentType`)}
-                                                error={!!errors.apartmentTypes?.[index]?.apartmentType}
-                                                helperText={errors.apartmentTypes?.[index]?.apartmentType?.message}
-                                            />
-                                        </Grid>
-                                        <Grid size={{ xs: 12, md: 3 }}>
-                                            <TextField
-                                                type="number" fullWidth size="small"
-                                                label="Saleable Area (sqm)"
-                                                {...register(`apartmentTypes.${index}.saleableAreaSqm`)}
-                                                error={!!errors.apartmentTypes?.[index]?.saleableAreaSqm}
-                                            />
-                                        </Grid>
-                                        <Grid size={{ xs: 12, md: 3 }}>
-                                            <FormControlLabel
-                                                control={
-                                                    <Controller
-                                                        name={`apartmentTypes.${index}.isUnderMortgage`}
-                                                        control={control}
-                                                        render={({ field }) => <Checkbox {...field} checked={field.value} size="small" />}
-                                                    />
-                                                }
-                                                label={<Typography variant="body2">Under Mortgage?</Typography>}
-                                            />
-                                        </Grid>
-
-                                        <Grid size={{ xs: 12, md: 6 }}>
-                                            <TextField
-                                                type="number" fullWidth size="small"
-                                                label="Proposed Units"
-                                                {...register(`apartmentTypes.${index}.proposedNumberOfUnits`)}
-                                                error={!!errors.apartmentTypes?.[index]?.proposedNumberOfUnits}
-                                            />
-                                        </Grid>
-                                        <Grid size={{ xs: 12, md: 6 }}>
-                                            <TextField
-                                                type="number" fullWidth size="small"
-                                                label="Booked/Sold Units"
-                                                {...register(`apartmentTypes.${index}.numberOfUnitsBooked`)}
-                                                error={!!errors.apartmentTypes?.[index]?.numberOfUnitsBooked}
-                                                helperText={errors.apartmentTypes?.[index]?.numberOfUnitsBooked?.message}
-                                            />
-                                        </Grid>
-                                    </Grid>
-                                </Box>
-                            ))}
-                            {fields.length === 0 && (
-                                <Box sx={{ textAlign: 'center', py: 4, bgcolor: '#f9fafb', borderRadius: 1 }}>
-                                    <Typography variant="body2" color="text.secondary">
-                                        No apartment types added yet. Click "Add Type" to configure units.
-                                    </Typography>
-                                </Box>
+                            {/* Added Items Table */}
+                            {fields.length > 0 ? (
+                                <TableContainer component={Paper} variant="outlined">
+                                    <Table size="small">
+                                        <TableHead sx={{ bgcolor: "#f9fafb" }}>
+                                            <TableRow>
+                                                <TableCell>Floor</TableCell>
+                                                <TableCell>Type</TableCell>
+                                                <TableCell>Area</TableCell>
+                                                <TableCell>Proposed</TableCell>
+                                                <TableCell>Booked</TableCell>
+                                                <TableCell>Mortgage?</TableCell>
+                                                <TableCell>Action</TableCell>
+                                            </TableRow>
+                                        </TableHead>
+                                        <TableBody>
+                                            {fields.map((field, index) => (
+                                                <TableRow key={field.id}>
+                                                    <TableCell>{field.floorNumber}</TableCell>
+                                                    <TableCell>{field.apartmentType}</TableCell>
+                                                    <TableCell>{field.saleableAreaSqm}</TableCell>
+                                                    <TableCell>{field.proposedNumberOfUnits}</TableCell>
+                                                    <TableCell>{field.numberOfUnitsBooked}</TableCell>
+                                                    <TableCell>{field.isUnderMortgage ? "Yes" : "No"}</TableCell>
+                                                    <TableCell>
+                                                        <IconButton
+                                                            size="small"
+                                                            color="error"
+                                                            onClick={() => remove(index)}
+                                                        >
+                                                            <DeleteIcon fontSize="small" />
+                                                        </IconButton>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
+                            ) : (
+                                <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 2 }}>
+                                    No apartment types added. Add details above.
+                                </Typography>
                             )}
+
+                            {/* Hidden Input for Form Validation (Optional - strict validation relies on schema check on submit) */}
+                            {errors.apartmentTypes && (
+                                <Typography color="error" variant="caption" sx={{ mt: 1, display: 'block' }}>
+                                    {errors.apartmentTypes.message}
+                                </Typography>
+                            )}
+
                         </CardContent>
                     </Card>
 
