@@ -8,7 +8,7 @@ export interface User {
     email: string;
     role: UserRole;
     scope: any; // Define strictly based on backend if known, else any for now
-    projectId?: string; // Added projectId as per backend response
+    loginId?: string; // Login ID format: TSRERA/ACC/2026/000001
 }
 
 export interface AuthResponse {
@@ -36,9 +36,9 @@ export interface Company {
 // API Client
 export const api = {
     // Auth
-    login: async (credentials: { projectId: string }) => {
+    login: async (credentials: { loginId: string; password: string }) => {
         // Note: The requirement says "POST /auth/login" with "Access token returned".
-        // Updated requirement: Body: { "projectId": "...", "password": "..." }
+        // Updated requirement: Body: { "loginId": "...", "password": "..." }
         const response = await axiosInstance.post<AuthResponse>("/auth/login", credentials);
         if (response.data.accessToken) {
             setToken(response.data.accessToken);

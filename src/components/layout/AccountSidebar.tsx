@@ -31,8 +31,8 @@ export function AccountSidebar() {
     const [showOrgMembers, setShowOrgMembers] = useState(false);
 
     useEffect(() => {
-        if (user?.projectId) {
-            profileApi.getProfile(user.projectId)
+        if (user?.loginId) {
+            profileApi.getProfile(user.loginId)
                 .then(res => {
                     // Handle different response structures
                     const p = (res as any).data || res.profile;
@@ -62,7 +62,7 @@ export function AccountSidebar() {
                     setShowOrgMembers(false);
                 });
         }
-    }, [user?.projectId]);
+    }, [user?.loginId]);
 
     const navItems = baseAccountNav.map(item => ({
         ...item,

@@ -10,9 +10,9 @@ export default function ProjectRedirectPage() {
 
     useEffect(() => {
         if (!isLoading) {
-            if (user && user.projectId) {
+            if (user && user.loginId) {
                 // Use projectId from user object (e.g. TSRERA/...)
-                const encodedId = encodeURIComponent(user.projectId);
+                const encodedId = encodeURIComponent(user.loginId);
                 router.replace(`/project/${encodedId}/status`);
             } else if (user && user.id) {
                 // Fallback to user.id if projectId missing (shouldn't happen for Project Users)

@@ -81,16 +81,16 @@ export default function PastExperiencePage() {
     const projectType = watch("projectType");
 
     useEffect(() => {
-        if (user?.projectId) {
+        if (user?.loginId) {
             checkProfileAndLoad();
         }
-    }, [user?.projectId]);
+    }, [user?.loginId]);
 
     const checkProfileAndLoad = async () => {
-        if (!user?.projectId) return;
+        if (!user?.loginId) return;
         try {
             // Check Profile First
-            const profileData = await profileApi.getProfile(user.projectId);
+            const profileData = await profileApi.getProfile(user.loginId);
             const p = (profileData as any).data || profileData.profile;
 
             let hasExperience = false;
@@ -123,9 +123,9 @@ export default function PastExperiencePage() {
     };
 
     const loadExperiences = async () => {
-        if (!user?.projectId) return;
+        if (!user?.loginId) return;
         try {
-            const data = await profileApi.getPastExperiences(user.projectId);
+            const data = await profileApi.getPastExperiences(user.loginId);
             setExperiences(data);
         } catch (error: any) {
             console.error("Failed to load past experiences", error);
@@ -138,13 +138,13 @@ export default function PastExperiencePage() {
     };
 
     const onSubmit = async (data: PastExperienceFormData) => {
-        if (!user?.projectId) return;
+        if (!user?.loginId) return;
         setError(null);
         try {
             if (editingId) {
-                await profileApi.updatePastExperience(user.projectId, editingId, data);
+                await profileApi.updatePastExperience(user.loginId, editingId, data);
             } else {
-                await profileApi.addPastExperience(user.projectId, data);
+                await profileApi.addPastExperience(user.loginId, data);
             }
             reset(emptyForm);
             setEditingId(null);
@@ -162,10 +162,10 @@ export default function PastExperiencePage() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!user?.projectId) return;
+        if (!user?.loginId) return;
         if (!confirm("Are you sure you want to delete this experience?")) return;
         try {
-            await profileApi.deletePastExperience(user.projectId, id);
+            await profileApi.deletePastExperience(user.loginId, id);
             loadExperiences();
         } catch (error) {
             console.error("Failed to delete", error);
@@ -217,7 +217,7 @@ export default function PastExperiencePage() {
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => router.push(user?.projectId ? `/project/${encodeURIComponent(user.projectId)}/status` : '/dashboard')}>Cancel</Button>
+                    <Button onClick={() => router.push(user?.loginId ? `/project/${encodeURIComponent(user.loginId)}/status` : '/dashboard')}>Cancel</Button>
                     <Button onClick={() => router.push('/account/profile')} variant="contained" autoFocus>
                         Go to Profile
                     </Button>

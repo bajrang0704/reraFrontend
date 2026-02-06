@@ -81,8 +81,8 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }: SidebarProps) => {
     const [showOrgMembers, setShowOrgMembers] = useState(false);
 
     useEffect(() => {
-        if (user?.projectId) {
-            profileApi.getProfile(user.projectId)
+        if (user?.loginId) {
+            profileApi.getProfile(user.loginId)
                 .then(res => {
                     console.log("Sidebar profile response:", res);
                     const p = (res as any).data || res.profile;
@@ -106,7 +106,7 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }: SidebarProps) => {
                 })
                 .catch(() => setShowOrgMembers(false));
         }
-    }, [user?.projectId]);
+    }, [user?.loginId]);
 
     const handleItemClick = (item: MenuItem) => {
         if (item.children) {
@@ -124,7 +124,7 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }: SidebarProps) => {
     };
 
     // Get the encoded project ID for navigation
-    const projectId = user?.projectId || user?.id || '';
+    const projectId = user?.loginId || user?.id || '';
     const encodedProjectId = encodeURIComponent(projectId);
 
     const baseMenuItems: MenuItem[] = [

@@ -68,7 +68,7 @@ export default function OrgMembersPage() {
     const checkOrgTypeAndLoad = async () => {
         if (!user?.projectId) return;
         try {
-            const profileData = await profileApi.getProfile(user.projectId);
+            const profileData = await profileApi.getProfile(user.loginId);
             // Handle different response structures
             const p = (profileData as any).data || profileData.profile;
             console.log("OrgMembers page profile data:", p);
@@ -106,7 +106,7 @@ export default function OrgMembersPage() {
     const loadMembers = async () => {
         if (!user?.projectId) return;
         try {
-            const data = await profileApi.getOrgMembers(user.projectId);
+            const data = await profileApi.getOrgMembers(user.loginId);
             setMembers(data);
         } catch (error) {
             console.error("Failed to load org members", error);
@@ -116,7 +116,7 @@ export default function OrgMembersPage() {
     const loadOtherMembers = async () => {
         if (!user?.projectId) return;
         try {
-            const data = await profileApi.getOtherMembers(user.projectId);
+            const data = await profileApi.getOtherMembers(user.loginId);
             setOtherMembers(data);
         } catch (error) {
             console.error("Failed to load other members", error);
@@ -178,9 +178,9 @@ export default function OrgMembersPage() {
         if (!user?.projectId) return;
         try {
             if (editingId) {
-                await profileApi.updateOrgMember(user.projectId, editingId, data);
+                await profileApi.updateOrgMember(user.loginId, editingId, data);
             } else {
-                await profileApi.addOrgMember(user.projectId, data);
+                await profileApi.addOrgMember(user.loginId, data);
             }
             handleClose();
             loadMembers();
@@ -197,7 +197,7 @@ export default function OrgMembersPage() {
             if (editingId) {
                 await profileApi.updateOtherMember(editingId, data);
             } else {
-                await profileApi.addOtherMember(user.projectId, data);
+                await profileApi.addOtherMember(user.loginId, data);
             }
             handleClose(); // Resets editing state
             loadOtherMembers(); // Refreshes list
@@ -215,7 +215,7 @@ export default function OrgMembersPage() {
                 await profileApi.deleteOtherMember(id);
                 loadOtherMembers();
             } else {
-                await profileApi.deleteOrgMember(user.projectId, id);
+                await profileApi.deleteOrgMember(user.loginId, id);
                 loadMembers();
             }
         } catch (error) {

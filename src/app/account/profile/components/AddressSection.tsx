@@ -44,6 +44,7 @@ export default function AddressSection({
                         required
                         {...form.register(`${prefix}.houseNumber`, { required: "Required" })}
                         error={!!getError("houseNumber")}
+                        helperText={getError("houseNumber")?.message}
                     />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
@@ -54,6 +55,7 @@ export default function AddressSection({
                         required
                         {...form.register(`${prefix}.buildingName`, { required: "Required" })}
                         error={!!getError("buildingName")}
+                        helperText={getError("buildingName")?.message}
                     />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
@@ -64,6 +66,7 @@ export default function AddressSection({
                         required
                         {...form.register(`${prefix}.streetName`, { required: "Required" })}
                         error={!!getError("streetName")}
+                        helperText={getError("streetName")?.message}
                     />
                 </Grid>
                 <Grid size={{ xs: 12, md: 6 }}>
@@ -74,6 +77,7 @@ export default function AddressSection({
                         required
                         {...form.register(`${prefix}.locality`, { required: "Required" })}
                         error={!!getError("locality")}
+                        helperText={getError("locality")?.message}
                     />
                 </Grid>
                 <Grid size={{ xs: 12 }}>
@@ -84,6 +88,7 @@ export default function AddressSection({
                         required
                         {...form.register(`${prefix}.landmark`, { required: "Required" })}
                         error={!!getError("landmark")}
+                        helperText={getError("landmark")?.message}
                     />
                 </Grid>
 
@@ -104,6 +109,7 @@ export default function AddressSection({
                                 label="District"
                                 required
                                 error={!!getError("district")}
+                                helperText={getError("district")?.message}
                                 onChange={(e) => {
                                     field.onChange(e.target.value);
                                     onDistrictChange(e.target.value, form);
@@ -129,6 +135,7 @@ export default function AddressSection({
                                 label="Mandal"
                                 disabled={!form.watch(`${prefix}.district`)}
                                 error={!!getError("mandal")}
+                                helperText={getError("mandal")?.message}
                                 onChange={(e) => {
                                     field.onChange(e.target.value);
                                     onMandalChange(e.target.value, form);
@@ -154,6 +161,7 @@ export default function AddressSection({
                                 label="Village/City/Town"
                                 disabled={!form.watch(`${prefix}.mandal`)}
                                 error={!!getError("villageCityTown")}
+                                helperText={getError("villageCityTown")?.message}
                             >
                                 {villages.map((v) => (
                                     <MenuItem key={v.code} value={v.code}>{v.name}</MenuItem>
@@ -173,6 +181,7 @@ export default function AddressSection({
                             pattern: { value: PINCODE_REGEX, message: "Invalid Pincode" }
                         })}
                         error={!!getError("pincode")}
+                        helperText={getError("pincode")?.message}
                     />
                 </Grid>
             </Grid>

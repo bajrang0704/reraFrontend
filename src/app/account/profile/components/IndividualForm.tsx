@@ -45,11 +45,11 @@ export default function IndividualForm({
     const [uploading, setUploading] = useState(false);
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0] && user?.projectId) {
+        if (e.target.files && e.target.files[0] && user?.loginId) {
             const file = e.target.files[0];
             setUploading(true);
             try {
-                const { url } = await profileApi.uploadProfileImage(user.projectId, file);
+                const { url } = await profileApi.uploadProfileImage(user.loginId, file);
                 form.setValue("imageUrl", url, { shouldValidate: true, shouldDirty: true });
             } catch (error) {
                 console.error("Failed to upload image", error);
@@ -61,7 +61,10 @@ export default function IndividualForm({
     };
 
     return (
-        <form onSubmit={form.handleSubmit(onSubmit)}>
+        <form onSubmit={form.handleSubmit(onSubmit, (errors) => {
+            console.error("Form validation errors:", errors);
+            alert("Please check all required fields and try again.");
+        })}>
             {/* Individual Details */}
             <Paper sx={{ mb: 4, p: 3 }}>
                 <Typography variant="h6" sx={{ mb: 3 }}>Individual Details</Typography>
@@ -146,7 +149,6 @@ export default function IndividualForm({
                         <Controller
                             name="hasPastExperience"
                             control={form.control}
-                            rules={{ required: "Required" }}
                             render={({ field }) => (
                                 <RadioGroup row {...field} value={field.value ? "YES" : "NO"} onChange={(e) => field.onChange(e.target.value === "YES")}>
                                     <FormControlLabel value="YES" control={<Radio />} label="Yes" />
@@ -162,7 +164,6 @@ export default function IndividualForm({
                         <Controller
                             name="hasGst"
                             control={form.control}
-                            rules={{ required: "Required" }}
                             render={({ field }) => (
                                 <RadioGroup row {...field} value={field.value ? "YES" : "NO"} onChange={(e) => field.onChange(e.target.value === "YES")}>
                                     <FormControlLabel value="YES" control={<Radio />} label="Yes" />

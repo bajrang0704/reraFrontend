@@ -51,13 +51,13 @@ export default function MyProfilePage() {
     useEffect(() => {
         const loadData = async () => {
             if (isInitializing) return; // Wait for auth to initialize
-            if (!user?.projectId) {
+            if (!user?.loginId) {
                 setLoading(false);
                 return;
             }
             try {
                 const [profileData, districtsData] = await Promise.all([
-                    profileApi.getProfile(user.projectId),
+                    profileApi.getProfile(user.loginId),
                     profileApi.getDistricts(),
                 ]);
                 setDistricts(districtsData);
@@ -175,7 +175,7 @@ export default function MyProfilePage() {
         };
         loadData();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [user?.projectId, isInitializing]);
+    }, [user?.loginId, isInitializing]);
 
     // Helpers for location changes
     const handleDistrictChange = async (districtId: string, form: any) => {
@@ -214,8 +214,8 @@ export default function MyProfilePage() {
 
 
     const onSubmit = async (data: IndividualFormData | OrganizationFormData) => {
-        if (!user?.projectId) {
-            alert("Project ID not found");
+        if (!user?.loginId) {
+            alert("Login ID not found");
             return;
         }
         setSaving(true);
@@ -294,7 +294,7 @@ export default function MyProfilePage() {
                 };
             }
 
-            const response = await profileApi.saveProfile(user.projectId, payload);
+            const response = await profileApi.saveProfile(user.loginId, payload);
             alert("Profile saved successfully!");
         } catch (error) {
             console.error("Failed to save profile", error);

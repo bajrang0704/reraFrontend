@@ -10,7 +10,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { useState } from "react";
 
 const loginSchema = z.object({
-    projectId: z.string().min(1, "Project ID is required"),
+    loginId: z.string().min(1, "Login ID is required"),
     password: z.string().min(1, "Password is required"),
 });
 
@@ -46,17 +46,17 @@ export default function LoginPage() {
                 <CardContent>
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                         <div className="space-y-2">
-                            <label htmlFor="projectId" className="text-sm font-medium">
-                                Project ID
+                            <label htmlFor="loginId" className="text-sm font-medium">
+                                Login ID
                             </label>
                             <Input
-                                id="projectId"
+                                id="loginId"
                                 type="text"
-                                placeholder="TSRERA/PJT/2026/000001"
-                                {...register("projectId")}
+                                placeholder="TSRERA/ACC/2026/000001"
+                                {...register("loginId")}
                             />
-                            {errors.projectId && (
-                                <p className="text-sm text-red-500">{errors.projectId.message}</p>
+                            {errors.loginId && (
+                                <p className="text-sm text-red-500">{errors.loginId.message}</p>
                             )}
                         </div>
 

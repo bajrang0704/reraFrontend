@@ -121,8 +121,19 @@ export const profileApi = {
     },
 
     // Location data (for cascading dropdowns)
-    getDistricts: async (): Promise<District[]> => {
-        const response = await axiosInstance.get<{ districts: District[] }>(`/locations/districts`);
+    getStates: async (): Promise<{ id: string; name: string }[]> => {
+        try {
+            const response = await axiosInstance.get<{ states: { id: string; name: string }[] }>(`/locations/states`);
+            return response.data.states || [];
+        } catch {
+            // Fallback for when states endpoint doesn't exist
+            return [{ id: "Telangana", name: "Telangana" }];
+        }
+    },
+
+    getDistricts: async (state?: string): Promise<District[]> => {
+        const params = state ? `?state=${encodeURIComponent(state)}` : '';
+        const response = await axiosInstance.get<{ districts: District[] }>(`/locations/districts${params}`);
         return response.data.districts;
     },
 
