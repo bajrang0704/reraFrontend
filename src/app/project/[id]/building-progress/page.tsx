@@ -170,6 +170,7 @@ export default function BuildingTaskProgressPage({ params }: { params: Promise<{
                         value={selectedProject?.id || ""}
                         onChange={(e) => handleProjectChange(e.target.value)}
                         size="small"
+                        disabled={!!id && id !== '%5Bid%5D'}
                     >
                         <MenuItem value="">Select Project</MenuItem>
                         {projects.map((p) => (

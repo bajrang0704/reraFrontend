@@ -276,3 +276,88 @@ export interface DocumentListResponse {
         documents: ProjectDocument[];
     };
 }
+
+// --- Project Professionals Types ---
+
+export enum ProfessionalType {
+    ARCHITECT = "ARCHITECT",
+    STRUCTURAL_ENGINEER = "STRUCTURAL_ENGINEER",
+    REAL_ESTATE_AGENT = "REAL_ESTATE_AGENT",
+    CONTRACTOR = "CONTRACTOR",
+    OTHER = "OTHER"
+}
+
+export interface ProjectProfessional {
+    id: string;
+    projectId: string;
+    professionalType: ProfessionalType;
+    name: string;
+    address: string;
+    aadhaarNo?: string;
+    contactNo: string;
+    email?: string; // Often useful context, though not strictly in mock
+    reraCertificateNo?: string; // For Agents
+    coaCertificateNo?: string;  // For Architects
+    designation?: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface ProfessionalResponse {
+    success: boolean;
+    data: ProjectProfessional[];
+}
+
+// --- Project Litigation Types ---
+
+export type CaseType = 'CIVIL' | 'CRIMINAL' | 'OTHERS';
+export type PetitionType = 'WRIT_PETITION' | 'SUIT' | 'OTHER';
+
+export interface LitigationDocument {
+    id: string;
+    fileName: string;
+    uploadedAt: string;
+}
+
+export interface ProjectLitigation {
+    id: string;
+    projectId: string;
+    courtName: string;
+    caseType: CaseType;
+    caseTypeOther?: string;
+    petitionType: PetitionType;
+    petitionTypeOther?: string;
+    caseNumber: string;
+    caseYear: number | string; // API says 2022 (number), but form might handle string. API contract says 2022.
+    hasInterimOrder: boolean;
+    presentStatus: string;
+    documents?: LitigationDocument[];
+    created_at?: string;
+    updated_at?: string;
+}
+
+export interface LitigationResponse {
+    success: boolean;
+    data: ProjectLitigation[];
+}
+
+// --- Building Task Progress Types ---
+
+export interface BuildingTaskMaster {
+    code: string;
+    label: string;
+    displayOrder: number;
+}
+
+export interface BuildingTaskProgress {
+    taskCode: string;
+    percentageOfWork: number;
+}
+
+export interface BuildingProgressResponse {
+    success: boolean;
+    data: {
+        buildingId: string;
+        tasks: BuildingTaskProgress[];
+    };
+}

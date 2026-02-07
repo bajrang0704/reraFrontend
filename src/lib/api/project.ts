@@ -12,6 +12,17 @@ import {
     BankAccount,
     GISData,
     Building,
+    CostHead,
+    ProjectCost,
+    SavedCostResponse,
+    DocumentType,
+    ProjectDocument,
+    DocumentListResponse,
+    ProjectProfessional,
+    ProfessionalType,
+    ProjectLitigation,
+    BuildingTaskMaster,
+    BuildingTaskProgress,
 } from "@/types/project";
 
 export const projectApi = {
@@ -360,6 +371,159 @@ export const projectApi = {
         const encodedDocId = encodeURIComponent(documentId);
         await axiosInstance.delete(`/projects/${encodedProjectId}/documents/${encodedDocId}`);
     },
+
+    // --- Project Professionals APIs ---
+
+    // List Project Professionals
+    getProjectProfessionals: async (projectId: string): Promise<ProjectProfessional[]> => {
+        const encodedId = encodeURIComponent(projectId);
+        try {
+            const response = await axiosInstance.get<{ success: boolean; data: ProjectProfessional[] } | ProjectProfessional[]>(`/projects/${encodedId}/professionals`);
+
+            // Handle direct array response (as per user contract)
+            if (Array.isArray(response.data)) {
+                return response.data;
+            }
+
+            // Handle wrapped response
+            const body = response.data as { success: boolean; data: ProjectProfessional[] };
+            if (body && Array.isArray(body.data)) {
+                return body.data;
+            }
+
+            return [];
+        } catch (error: any) {
+            console.error("Failed to fetch professionals", error);
+            if (error.response?.status === 404) return [];
+            return [];
+        }
+    },
+
+    // Add Project Professional
+    addProjectProfessional: async (projectId: string, data: Partial<ProjectProfessional>): Promise<{ success: boolean; data: ProjectProfessional } | ProjectProfessional> => {
+        const encodedId = encodeURIComponent(projectId);
+        const response = await axiosInstance.post(`/projects/${encodedId}/professionals`, data);
+        return response.data;
+    },
+
+    // Update Project Professional
+    updateProjectProfessional: async (projectId: string, professionalId: string, data: Partial<ProjectProfessional>): Promise<{ success: boolean; data: ProjectProfessional } | ProjectProfessional> => {
+        const encodedProjectId = encodeURIComponent(projectId);
+        const encodedProfId = encodeURIComponent(professionalId);
+        const response = await axiosInstance.put(`/projects/${encodedProjectId}/professionals/${encodedProfId}`, data);
+        return response.data;
+    },
+
+    // Delete Project Professional
+    deleteProjectProfessional: async (projectId: string, professionalId: string): Promise<void> => {
+        const encodedProjectId = encodeURIComponent(projectId);
+        const encodedProfId = encodeURIComponent(professionalId);
+        await axiosInstance.delete(`/projects/${encodedProjectId}/professionals/${encodedProfId}`);
+    },
+
+    // --- Project Litigations APIs ---
+
+    // List Litigations
+    getProjectLitigations: async (projectId: string): Promise<ProjectLitigation[]> => {
+        const encodedId = encodeURIComponent(projectId);
+        try {
+            const response = await axiosInstance.get<{ success: boolean; data: ProjectLitigation[] } | ProjectLitigation[]>(`/projects/${encodedId}/litigations`);
+
+            // Handle direct array
+            if (Array.isArray(response.data)) return response.data;
+
+            // Handle wrapped
+            const body = response.data as { success: boolean; data: ProjectLitigation[] };
+            if (body && Array.isArray(body.data)) return body.data;
+
+            return [];
+        } catch (error: any) {
+            console.error("Failed to fetch litigations", error);
+            if (error.response?.status === 404) return [];
+            return [];
+        }
+    },
+
+    // Add Litigation
+    addProjectLitigation: async (projectId: string, data: Partial<ProjectLitigation>): Promise<{ success: boolean; data: ProjectLitigation } | ProjectLitigation> => {
+        const encodedId = encodeURIComponent(projectId);
+        const response = await axiosInstance.post(`/projects/${encodedId}/litigations`, data);
+        return response.data;
+    },
+
+    // Update Litigation
+    updateProjectLitigation: async (projectId: string, litigationId: string, data: Partial<ProjectLitigation>): Promise<{ success: boolean; data: ProjectLitigation } | ProjectLitigation> => {
+        const encodedProjectId = encodeURIComponent(projectId);
+        const encodedLitId = encodeURIComponent(litigationId);
+        const response = await axiosInstance.put(`/projects/${encodedProjectId}/litigations/${encodedLitId}`, data);
+        return response.data;
+    },
+
+    // Delete Litigation
+    deleteProjectLitigation: async (projectId: string, litigationId: string): Promise<void> => {
+        const encodedProjectId = encodeURIComponent(projectId);
+        const encodedLitId = encodeURIComponent(litigationId);
+        await axiosInstance.delete(`/projects/${encodedProjectId}/litigations/${encodedLitId}`);
+    },
+
+    // Upload Litigation Document
+    uploadLitigationDocument: async (projectId: string, litigationId: string, file: File): Promise<any> => {
+        // Endpoint: POST /projects/litigations/:litigationId/documents (As per user request, slightly different from others)
+        // Wait, User said: Endpoint: POST /projects/litigations/:litigationId/documents
+        // But context usually implies /projects/:projectId/... or generic /litigations/...
+        // I will follow the user provided endpoint: /projects/litigations/:litigationId/documents
+
+        // Actually typical REST for this app so far is /projects/{id}/...
+        // But I will stick exactly to what USER said: "Endpoint: POST /projects/litigations/:litigationId/documents"
+        // Verify: "Endpoint: POST /projects/litigations/:litigationId/documents"
+
+        const encodedLitId = encodeURIComponent(litigationId);
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const response = await axiosInstance.post(`/projects/litigations/${encodedLitId}/documents`, formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+        });
+        return response.data;
+    },
+
+    // --- Building Task Progress APIs ---
+
+    // Get Building Task Master
+    getBuildingTaskMasters: async (): Promise<BuildingTaskMaster[]> => {
+        try {
+            const response = await axiosInstance.get<{ success: boolean; data: BuildingTaskMaster[] } | BuildingTaskMaster[]>('/building-tasks');
+            if (Array.isArray(response.data)) return response.data;
+            const body = response.data as { success: boolean; data: BuildingTaskMaster[] };
+            if (body && Array.isArray(body.data)) return body.data;
+            return [];
+        } catch (error) {
+            console.error("Failed to fetch building task masters", error);
+            return [];
+        }
+    },
+
+    // Get Building Progress
+    getBuildingProgress: async (projectId: string, buildingId: string): Promise<BuildingTaskProgress[]> => {
+        const encodedProjectId = encodeURIComponent(projectId);
+        const encodedBuildingId = encodeURIComponent(buildingId);
+        try {
+            const response = await axiosInstance.get<{ success: boolean; data: { tasks: BuildingTaskProgress[] } }>(`/projects/${encodedProjectId}/buildings/${encodedBuildingId}/tasks`);
+            return response.data.data?.tasks || [];
+        } catch (error: any) {
+            console.error("Failed to fetch building progress", error);
+            if (error.response?.status === 404) return [];
+            return [];
+        }
+    },
+
+    // Save Building Progress
+    saveBuildingProgress: async (projectId: string, buildingId: string, tasks: BuildingTaskProgress[]): Promise<any> => {
+        const encodedProjectId = encodeURIComponent(projectId);
+        const encodedBuildingId = encodeURIComponent(buildingId);
+        const response = await axiosInstance.put(`/projects/${encodedProjectId}/buildings/${encodedBuildingId}/tasks`, { tasks });
+        return response.data;
+    },
 };
 
-import { CostHead, ProjectCost, SavedCostResponse, DocumentType, ProjectDocument, DocumentListResponse } from "@/types/project";
+
